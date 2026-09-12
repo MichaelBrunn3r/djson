@@ -1,0 +1,39 @@
+[package]
+name = "djson"
+version = "0.1.0"
+edition = "2024"
+
+[[bench]]
+name = "pretty"
+harness = false
+required-features = ["pretty_ast"]
+
+[[bench]]
+name = "tokenize"
+harness = false
+
+[[bench]]
+name = "parse"
+harness = false
+
+[[bench]]
+name = "evaluate"
+harness = false
+
+[[bench]]
+name = "pipeline"
+harness = false
+
+[dependencies]
+miette = { workspace = true }
+thiserror = "2.0.20"
+
+[dev-dependencies]
+criterion = "0.8.2"
+insta = { workspace = true }
+
+[features]
+pretty_ast = []
+
+[lints]
+workspace = true

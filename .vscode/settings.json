@@ -1,0 +1,7 @@
+{
+    "rust-analyzer.cargo.features": "all",
+    "deno.enable": true,
+    "[typescript]": {
+        "editor.defaultFormatter": "denoland.vscode-deno"
+    }
+}

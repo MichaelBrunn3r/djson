@@ -1,0 +1,27 @@
+[package]
+name = "djson-cli"
+version = "0.1.0"
+edition = "2024"
+
+[[bin]]
+name = "djson"
+path = "src/main.rs"
+
+[features]
+default = ["fmt_json", "fmt_yaml"]
+fmt_json = ["dep:serde_json"]
+fmt_yaml = ["dep:serde_yaml"]
+
+[dependencies]
+clap = { version = "4.6.6", features = ["derive"] }
+djson = { path = "../lib" }
+miette = { workspace = true }
+reedline = "0.51.0"
+serde_json = { version = "1.0.151", optional = true }
+serde_yaml = { version = "0.9.34", optional = true }
+
+[dev-dependencies]
+insta = { workspace = true }
+
+[lints]
+workspace = true

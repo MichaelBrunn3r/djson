@@ -1,0 +1,13 @@
+# yaml-language-server: $schema=https://devenv.sh/devenv.schema.json
+inputs:
+  flake:
+    url: path:.
+  nixpkgs:
+    follows: flake/nixpkgs
+  rust-overlay:
+    follows: flake/rust-overlay
+  git-hooks:
+    url: github:cachix/git-hooks.nix
+    inputs:
+      nixpkgs:
+        follows: nixpkgs

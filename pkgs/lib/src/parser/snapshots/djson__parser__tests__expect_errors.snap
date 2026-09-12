@@ -1,0 +1,27 @@
+---
+source: pkgs/lib/src/parser/mod.rs
+expression: cases
+---
+adjacent top-level tokens
+input: `key key`
+error: `unexpected token`
+
+arithmetic expression as key
+input: `1 + 1: 1`
+error: `invalid key`
+
+call expression as key
+input: `x(): 1`
+error: `invalid key`
+
+member expression as key
+input: `x.foo(): 1`
+error: `invalid key`
+
+multi-word unquoted key
+input: `let there be rain: 1`
+error: `unexpected token`
+
+non-identifier binding name
+input: `let 1 = 1`
+error: `unexpected token`
