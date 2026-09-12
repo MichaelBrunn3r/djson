@@ -18,10 +18,14 @@ use crate::repl::Repl;
 
 /// Parse and evaluate a djson document.
 #[derive(ClapParser, Debug)]
-#[command(version, about)]
+#[command(version, about, args_conflicts_with_subcommands = true)]
 struct Args {
     #[command(subcommand)]
     command: Option<Command>,
+
+    /// Validate the document without printing its value.
+    #[arg(long)]
+    check: bool,
 
     /// Choose the output format.
     #[arg(long, value_enum, default_value_t = OutputFormat::Djson)]
@@ -71,6 +75,10 @@ fn run() -> Result<(), Report> {
     let mut scope = Scope::child(stdlib::prelude());
     let value = evaluate_ast(&ast, &mut scope)
         .map_err(|error| miette!("failed to evaluate document: {error:?}"))?;
+
+    if args.check {
+        return Ok(());
+    }
 
     let output = render_value(&value, args.fmt)
         .map_err(|error| miette!("failed to render value: {error}"))?;

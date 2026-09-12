@@ -12,5 +12,6 @@
     perf
     samply
     vsce
+    uv
   ];
 }
