@@ -1,0 +1,43 @@
+---
+source: pkgs/lib/src/eval/mod.rs
+expression: cases
+---
+division by zero
+input: `result: 1 / 0`
+error: `division by zero`
+
+integer overflow
+input: `result: 9223372036854775807 + 1`
+error: `numeric overflow`
+
+type mismatch
+input: `result: true + 1`
+error: `type mismatch`
+
+unsupported expression
+input: `result: unknown`
+error: `unknown identifier `unknown``
+
+unknown function
+input: `result: missing(1)`
+error: `unknown function `missing``
+
+not callable
+input: `let value = 1
+        result: value(2)`
+error: `value is not callable`
+
+duplicate key
+input: `result: 1
+        result: 2`
+error: `duplicate key `result``
+
+mixed document forms
+input: `1
+        result: 2`
+error: `mixed document forms`
+
+multiple expressions
+input: `1
+        2`
+error: `multiple expressions`

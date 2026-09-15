@@ -2,7 +2,7 @@
 
 use miette::SourceSpan;
 
-use crate::lexer::token::{Spanned, Token};
+use crate::{lexer::token::Token, span::Spanned};
 pub mod token;
 
 pub struct Lexer<'input> {

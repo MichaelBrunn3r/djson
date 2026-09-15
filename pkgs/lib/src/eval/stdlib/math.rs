@@ -56,7 +56,7 @@ pub fn atan(arguments: &[Value]) -> Result<Value, EvalError> {
 pub fn atan2(arguments: &[Value]) -> Result<Value, EvalError> {
     match numeric_pair(arguments) {
         Some((left, right)) => Ok(Value::Float(left.atan2(right))),
-        None => Err(EvalError::TypeMismatch),
+        None => Err(EvalError::TypeMismatch { span: None }),
     }
 }
 
@@ -64,7 +64,7 @@ fn unary_float(arguments: &[Value], operation: fn(f64) -> f64) -> Result<Value, 
     match arguments {
         [Value::Int(value)] => Ok(Value::Float(operation(*value as f64))),
         [Value::Float(value)] => Ok(Value::Float(operation(*value))),
-        _ => Err(EvalError::TypeMismatch),
+        _ => Err(EvalError::TypeMismatch { span: None }),
     }
 }
 
@@ -98,6 +98,12 @@ mod tests {
         evaluate_ast(&ast, &mut scope)
     }
 
+    fn evaluate_error(input: &str) -> String {
+        evaluate(input)
+            .expect_err("expected an evaluation error")
+            .to_string()
+    }
+
     #[test]
     fn stdlib_members_can_be_used() {
         use std::f64::consts::*;
@@ -129,12 +135,12 @@ mod tests {
     fn expect_errors() {
         let import_stdlib = "let std = import('std')\n";
         let cases = [
-            ("result: std.math.cos(true)", Err(EvalError::TypeMismatch)),
-            ("result: std.math.sin(1, 2)", Err(EvalError::TypeMismatch)),
+            ("result: std.math.cos(true)", "type mismatch"),
+            ("result: std.math.sin(1, 2)", "type mismatch"),
         ];
         for (expression, expected) in cases {
             let expression = format!("{import_stdlib}{expression}");
-            assert_eq!(evaluate(&expression), expected, "{expression}");
+            assert_eq!(evaluate_error(&expression), expected, "{expression}");
         }
     }
 }

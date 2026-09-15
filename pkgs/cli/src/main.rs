@@ -74,7 +74,7 @@ fn run() -> Result<(), Report> {
         .map_err(|error| Report::new(error).with_source_code(source.clone()))?;
     let mut scope = Scope::child(stdlib::prelude());
     let value = evaluate_ast(&ast, &mut scope)
-        .map_err(|error| miette!("failed to evaluate document: {error:?}"))?;
+        .map_err(|error| Report::new(error).with_source_code(source.clone()))?;
 
     if args.check {
         return Ok(());

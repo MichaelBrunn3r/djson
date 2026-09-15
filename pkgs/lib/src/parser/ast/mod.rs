@@ -1,45 +1,47 @@
 #[cfg(any(test, feature = "pretty_ast"))]
 pub mod pretty;
 
+use crate::span::Spanned;
+
 #[derive(Debug, PartialEq)]
 pub struct AST<'input> {
-    pub statements: Vec<Statement<'input>>,
+    pub statements: Vec<Spanned<Statement<'input>>>,
 }
 
 #[derive(Debug, PartialEq)]
 pub enum Statement<'input> {
-    Expr(Expr<'input>),
-    KV(KV<'input>),
-    Let(Let<'input>),
+    Expr(Spanned<Expr<'input>>),
+    KV(Spanned<KV<'input>>),
+    Let(Spanned<Let<'input>>),
 }
 
 #[derive(Debug, PartialEq)]
 pub struct Let<'input> {
-    pub pattern: Pattern<'input>,
-    pub expr: Expr<'input>,
+    pub pattern: Spanned<Pattern<'input>>,
+    pub expr: Spanned<Expr<'input>>,
 }
 
 #[derive(Debug, PartialEq)]
 pub enum Pattern<'input> {
     Name(&'input str),
-    Map(Vec<MapPattern<'input>>),
+    Map(Vec<Spanned<MapPattern<'input>>>),
     List {
-        patterns: Vec<Self>,
-        rest: Option<&'input str>,
+        patterns: Vec<Spanned<Self>>,
+        rest: Option<Spanned<&'input str>>,
     },
 }
 
 #[derive(Debug, PartialEq)]
 pub struct MapPattern<'input> {
     pub key: &'input str,
-    pub pattern: Pattern<'input>,
-    pub default: Option<Expr<'input>>,
+    pub pattern: Spanned<Pattern<'input>>,
+    pub default: Option<Spanned<Expr<'input>>>,
 }
 
 #[derive(Debug, PartialEq)]
 pub struct KV<'input> {
-    pub key: &'input str,
-    pub expr: Expr<'input>,
+    pub key: Spanned<&'input str>,
+    pub expr: Spanned<Expr<'input>>,
 }
 
 #[derive(Debug, PartialEq, Eq)]
@@ -53,30 +55,30 @@ pub enum Expr<'input> {
     Int(i64),
     Float(f64),
     Str(&'input str),
-    List(Vec<Self>),
-    Map(Vec<KV<'input>>),
+    List(Vec<Spanned<Self>>),
+    Map(Vec<Spanned<KV<'input>>>),
     Id(Identifier<'input>),
     Access {
-        object: Box<Self>,
+        object: Box<Spanned<Self>>,
         name: &'input str,
     },
     Unary {
         op: PrefixOp,
-        value: Box<Self>,
+        value: Box<Spanned<Self>>,
     },
     Binary {
-        left: Box<Self>,
+        left: Box<Spanned<Self>>,
         op: InfixOp,
-        right: Box<Self>,
+        right: Box<Spanned<Self>>,
     },
     Call {
-        callee: Box<Self>,
-        arguments: Vec<Self>,
+        callee: Box<Spanned<Self>>,
+        arguments: Vec<Spanned<Self>>,
     },
     If {
-        condition: Box<Self>,
-        then: Box<Self>,
-        r#else: Box<Self>,
+        condition: Box<Spanned<Self>>,
+        then: Box<Spanned<Self>>,
+        r#else: Box<Spanned<Self>>,
     },
 }
 

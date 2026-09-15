@@ -35,9 +35,9 @@ fn examples_evaluate_without_errors() {
             .unwrap_or_else(|error| panic!("failed to read {path:?}: {error}"));
         let ast = Parser::new(&input)
             .parse_stmnts()
-            .unwrap_or_else(|error| panic!("failed to parse {path:?}: {error:?}"));
+            .unwrap_or_else(|error| panic!("failed to parse {path:?}: {error}"));
         let mut scope = Scope::child(stdlib::prelude());
         evaluate_ast(&ast, &mut scope)
-            .unwrap_or_else(|error| panic!("failed to evaluate {path:?}: {error:?}"));
+            .unwrap_or_else(|error| panic!("failed to evaluate {path:?}: {error}"));
     }
 }

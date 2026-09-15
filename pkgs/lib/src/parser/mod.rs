@@ -6,20 +6,18 @@ pub mod parse_expr;
 use std::iter::Peekable;
 
 use ast::AST;
+use miette::SourceSpan;
 
 use crate::{
-    lexer::{
-        Lexer, LexerError,
-        token::{Spanned, Token},
-    },
+    lexer::{Lexer, LexerError, token::Token},
     parser::ast::{Expr, Identifier, InfixOp, KV, Let, MapPattern, Pattern, Statement},
+    span::Spanned,
 };
 
 //region Parser
 pub struct Parser<'input> {
     tokens: Peekable<Lexer<'input>>,
-    last_span: miette::SourceSpan,
-    last_expression_span: miette::SourceSpan,
+    last_span: SourceSpan,
 }
 
 impl<'input> Parser<'input> {
@@ -28,7 +26,6 @@ impl<'input> Parser<'input> {
         Self {
             tokens: Lexer::new(input).peekable(),
             last_span: (0, 0).into(),
-            last_expression_span: (0, 0).into(),
         }
     }
 
@@ -47,11 +44,12 @@ impl<'input> Parser<'input> {
     }
 
     /// Parses one statement, either a binding, key-value pair, or expression.
-    fn parse_stmnt(&mut self) -> ParserResult<Statement<'input>> {
+    fn parse_stmnt(&mut self) -> ParserResult<Spanned<Statement<'input>>> {
         let first = self.next_token()?;
+        let start = first.span;
 
         if matches!(first.value, Token::Id("let")) && !self.next_is(&Token::Colon) {
-            return self.parse_let_stmnt();
+            return self.parse_let_stmnt(start);
         }
 
         let expression = self.parse_expr(first, 0)?;
@@ -63,49 +61,72 @@ impl<'input> Parser<'input> {
                 let token = self.next_token()?;
                 return Err(Self::err_unexpected(&token, "a separator or ':'"));
             }
-            return Ok(Statement::Expr(expression));
+            let span = expression.span;
+            return Ok(Spanned {
+                value: Statement::Expr(expression),
+                span,
+            });
         }
 
-        let (Expr::Id(Identifier::Simple(key)) | Expr::Str(key)) = expression else {
-            return Err(ParserError::InvalidKey {
-                span: self.last_expression_span,
-            });
+        let Spanned {
+            value,
+            span: key_span,
+        } = expression;
+        let (Expr::Id(Identifier::Simple(key)) | Expr::Str(key)) = value else {
+            return Err(ParserError::InvalidKey { span: key_span });
         };
 
         self.next_token()?;
         let first = self.next_token()?;
-        Ok(Statement::KV(KV {
-            key,
-            expr: self.parse_expr(first, 0)?,
-        }))
+        let expr = self.parse_expr(first, 0)?;
+        let span = self.span_from(start);
+        Ok(Spanned {
+            value: Statement::KV(Spanned {
+                value: KV {
+                    key: Spanned {
+                        value: key,
+                        span: key_span,
+                    },
+                    expr,
+                },
+                span,
+            }),
+            span,
+        })
     }
 
     /// Parses a `let` binding statement.
-    fn parse_let_stmnt(&mut self) -> ParserResult<Statement<'input>> {
+    fn parse_let_stmnt(&mut self, start: SourceSpan) -> ParserResult<Spanned<Statement<'input>>> {
         let pattern = self.parse_pattern()?;
         self.expect_next_token(&Token::Eq)?;
         let first = self.next_token()?;
-        Ok(Statement::Let(Let {
-            pattern,
-            expr: self.parse_expr(first, 0)?,
-        }))
+        let expr = self.parse_expr(first, 0)?;
+        let span = self.span_from(start);
+        Ok(Spanned {
+            value: Statement::Let(Spanned {
+                value: Let { pattern, expr },
+                span,
+            }),
+            span,
+        })
     }
     //endregion Parse statements
 
     //region Parse pattern
-    fn parse_pattern(&mut self) -> ParserResult<Pattern<'input>> {
+    fn parse_pattern(&mut self) -> ParserResult<Spanned<Pattern<'input>>> {
         if self.next_is(&Token::LBrace) {
-            self.next_token()?;
-            self.parse_pattern_body()
+            let start = self.next_token()?.span;
+            self.parse_pattern_body(start)
         } else if self.next_is(&Token::LBracket) {
-            self.next_token()?;
-            self.parse_pattern_list()
+            let start = self.next_token()?.span;
+            self.parse_pattern_list(start)
         } else {
-            self.parse_pattern_name()
+            let token = self.next_token()?;
+            Self::parse_pattern_name(token)
         }
     }
 
-    fn parse_pattern_list(&mut self) -> ParserResult<Pattern<'input>> {
+    fn parse_pattern_list(&mut self, start: SourceSpan) -> ParserResult<Spanned<Pattern<'input>>> {
         let mut patterns = Vec::new();
         let mut rest = None;
         self.skip_separators()?;
@@ -116,8 +137,8 @@ impl<'input> Parser<'input> {
                 rest = Some(match self.next_token()? {
                     Spanned {
                         value: Token::Id(value),
-                        ..
-                    } => value,
+                        span,
+                    } => Spanned { value, span },
                     token => return Err(Self::err_unexpected(&token, "an identifier")),
                 });
                 break;
@@ -132,33 +153,42 @@ impl<'input> Parser<'input> {
         }
 
         self.expect_next_token(&Token::RBracket)?;
-        Ok(Pattern::List { patterns, rest })
+        Ok(self.spanned(start, Pattern::List { patterns, rest }))
     }
 
-    fn parse_pattern_name(&mut self) -> ParserResult<Pattern<'input>> {
-        match self.next_token()? {
-            Spanned {
-                value: Token::Id(value),
-                ..
-            } => Ok(Pattern::Name(value)),
-            token => Err(Self::err_unexpected(&token, "an identifier or map pattern")),
-        }
+    fn parse_pattern_name(token: Spanned<Token<'input>>) -> ParserResult<Spanned<Pattern<'input>>> {
+        let span = token.span;
+        let name = match token.value {
+            Token::Id(name) => name,
+            value => {
+                return Err(Self::err_unexpected(
+                    &Spanned { value, span },
+                    "an identifier or map pattern",
+                ));
+            }
+        };
+        Ok(Spanned {
+            value: Pattern::Name(name),
+            span,
+        })
     }
 
-    fn parse_pattern_body(&mut self) -> ParserResult<Pattern<'input>> {
+    fn parse_pattern_body(&mut self, start: SourceSpan) -> ParserResult<Spanned<Pattern<'input>>> {
         let mut patterns = Vec::new();
         self.skip_separators()?;
 
         while !self.next_is(&Token::RBrace) {
+            let token = self.next_token()?;
+            let key_span = token.span;
             let Spanned {
                 value: Token::Id(key),
                 ..
-            } = self.next_token()?
+            } = token
             else {
                 return Err(Self::err_unexpected(
                     &Spanned {
                         value: Token::RBrace,
-                        span: self.last_span,
+                        span: key_span,
                     },
                     "an identifier",
                 ));
@@ -166,20 +196,25 @@ impl<'input> Parser<'input> {
             let (pattern, default) = if self.next_is(&Token::Eq) {
                 self.next_token()?;
                 let first = self.next_token()?;
-                (Pattern::Name(key), Some(self.parse_expr(first, 0)?))
+                let default = self.parse_expr(first, 0)?;
+                (self.spanned(key_span, Pattern::Name(key)), Some(default))
             } else if self.next_is(&Token::LBracket) {
                 (self.parse_pattern()?, None)
             } else if self.next_is(&Token::Dot) {
                 self.next_token()?;
-                self.expect_next_token(&Token::LBrace)?;
-                (self.parse_pattern_body()?, None)
+                let body_start = self.expect_next_token(&Token::LBrace)?.span;
+                (self.parse_pattern_body(body_start)?, None)
             } else {
-                (Pattern::Name(key), None)
+                (self.spanned(key_span, Pattern::Name(key)), None)
             };
-            patterns.push(MapPattern {
-                key,
-                pattern,
-                default,
+            let span = self.span_from(key_span);
+            patterns.push(Spanned {
+                value: MapPattern {
+                    key,
+                    pattern,
+                    default,
+                },
+                span,
             });
 
             if !self.next_is(&Token::RBrace) {
@@ -189,7 +224,7 @@ impl<'input> Parser<'input> {
         }
 
         self.expect_next_token(&Token::RBrace)?;
-        Ok(Pattern::Map(patterns))
+        Ok(self.spanned(start, Pattern::Map(patterns)))
     }
     //endregion Parse pattern
 
@@ -222,10 +257,13 @@ impl<'input> Parser<'input> {
         Ok(())
     }
 
-    fn expect_next_token(&mut self, expected: &Token<'input>) -> ParserResult<()> {
+    fn expect_next_token(
+        &mut self,
+        expected: &Token<'input>,
+    ) -> ParserResult<Spanned<Token<'input>>> {
         let token = self.next_token()?;
         if token.value == *expected {
-            Ok(())
+            Ok(token)
         } else {
             Err(Self::err_unexpected(&token, &format!("{expected:?}")))
         }
@@ -251,6 +289,29 @@ impl<'input> Parser<'input> {
             span: token.span,
         }
     }
+
+    /// The end offset of the most recently consumed token.
+    const fn last_token_end(&self) -> usize {
+        self.last_span.offset() + self.last_span.len()
+    }
+
+    /// Builds a span covering `start` through the most recently consumed token.
+    fn span_from(&self, start: SourceSpan) -> SourceSpan {
+        (
+            start.offset(),
+            self.last_token_end().saturating_sub(start.offset()),
+        )
+            .into()
+    }
+
+    /// Pairs `value` with the span covering `start` through the most recently
+    /// consumed token.
+    fn spanned<T>(&self, start: SourceSpan, value: T) -> Spanned<T> {
+        Spanned {
+            value,
+            span: self.span_from(start),
+        }
+    }
 }
 
 //endregion Parser
@@ -268,7 +329,7 @@ pub enum ParserError {
     #[diagnostic(code(parser::unexpected_eof))]
     UnexpectedEof {
         #[label("input ends here")]
-        span: miette::SourceSpan,
+        span: SourceSpan,
     },
 
     #[error("unexpected token")]
@@ -277,14 +338,14 @@ pub enum ParserError {
         expected: String,
         found: String,
         #[label("expected {expected}, got {found} instead")]
-        span: miette::SourceSpan,
+        span: SourceSpan,
     },
 
     #[error("invalid key")]
     #[diagnostic(code(parser::invalid_key))]
     InvalidKey {
         #[label("keys must be identifiers or strings")]
-        span: miette::SourceSpan,
+        span: SourceSpan,
     },
 }
 //endregion ParserResult

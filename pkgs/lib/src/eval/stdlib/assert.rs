@@ -12,8 +12,8 @@ pub fn create_map() -> Map {
 pub const fn assert(arguments: &[Value]) -> Result<Value, EvalError> {
     match arguments {
         [Value::Bool(true)] => Ok(Value::Bool(true)),
-        [Value::Bool(false)] => Err(EvalError::AssertionFailed),
-        _ => Err(EvalError::TypeMismatch),
+        [Value::Bool(false)] => Err(EvalError::AssertionFailed { span: None }),
+        _ => Err(EvalError::TypeMismatch { span: None }),
     }
 }
 
@@ -32,6 +32,12 @@ mod tests {
         evaluate_ast(&ast, &mut scope)
     }
 
+    fn evaluate_error(input: &str) -> String {
+        evaluate(input)
+            .expect_err("expected an evaluation error")
+            .to_string()
+    }
+
     #[test]
     fn assertions_can_be_invoked() {
         assert_eq!(
@@ -43,16 +49,16 @@ mod tests {
     #[test]
     fn failed_assertions_return_an_error() {
         assert_eq!(
-            evaluate("let std = import('std')\nstd.assert.assert(false)"),
-            Err(EvalError::AssertionFailed)
+            evaluate_error("let std = import('std')\nstd.assert.assert(false)"),
+            "assertion failed"
         );
     }
 
     #[test]
     fn assertions_require_a_boolean() {
         assert_eq!(
-            evaluate("let std = import('std')\nstd.assert.assert(1)"),
-            Err(EvalError::TypeMismatch)
+            evaluate_error("let std = import('std')\nstd.assert.assert(1)"),
+            "type mismatch"
         );
     }
 }

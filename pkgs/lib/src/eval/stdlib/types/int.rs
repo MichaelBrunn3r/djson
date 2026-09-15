@@ -25,8 +25,8 @@ pub fn abs(arguments: &[Value]) -> Result<Value, EvalError> {
         [Value::Int(value)] => value
             .checked_abs()
             .map(Value::Int)
-            .ok_or(EvalError::Overflow),
-        _ => Err(EvalError::TypeMismatch),
+            .ok_or(EvalError::Overflow { span: None }),
+        _ => Err(EvalError::TypeMismatch { span: None }),
     }
 }
 
@@ -35,21 +35,21 @@ pub fn clamp(arguments: &[Value]) -> Result<Value, EvalError> {
         [Value::Int(value), Value::Int(minimum), Value::Int(maximum)] if minimum <= maximum => {
             Ok(Value::Int((*value).clamp(*minimum, *maximum)))
         }
-        _ => Err(EvalError::TypeMismatch),
+        _ => Err(EvalError::TypeMismatch { span: None }),
     }
 }
 
 pub fn sqrt(arguments: &[Value]) -> Result<Value, EvalError> {
     match arguments {
         [Value::Int(value)] => Ok(Value::Float((*value as f64).sqrt())),
-        _ => Err(EvalError::TypeMismatch),
+        _ => Err(EvalError::TypeMismatch { span: None }),
     }
 }
 
 pub fn ln(arguments: &[Value]) -> Result<Value, EvalError> {
     match arguments {
         [Value::Int(value)] => Ok(Value::Float((*value as f64).ln())),
-        _ => Err(EvalError::TypeMismatch),
+        _ => Err(EvalError::TypeMismatch { span: None }),
     }
 }
 
@@ -59,35 +59,35 @@ pub fn log(arguments: &[Value]) -> Result<Value, EvalError> {
             Ok(Value::Float((*value as f64).log(*base as f64)))
         }
         [Value::Int(value), Value::Float(base)] => Ok(Value::Float((*value as f64).log(*base))),
-        _ => Err(EvalError::TypeMismatch),
+        _ => Err(EvalError::TypeMismatch { span: None }),
     }
 }
 
 pub fn log2(arguments: &[Value]) -> Result<Value, EvalError> {
     match arguments {
         [Value::Int(value)] => Ok(Value::Float((*value as f64).log2())),
-        _ => Err(EvalError::TypeMismatch),
+        _ => Err(EvalError::TypeMismatch { span: None }),
     }
 }
 
 pub fn log10(arguments: &[Value]) -> Result<Value, EvalError> {
     match arguments {
         [Value::Int(value)] => Ok(Value::Float((*value as f64).log10())),
-        _ => Err(EvalError::TypeMismatch),
+        _ => Err(EvalError::TypeMismatch { span: None }),
     }
 }
 
 pub fn max(arguments: &[Value]) -> Result<Value, EvalError> {
     match arguments {
         [Value::Int(left), Value::Int(right)] => Ok(Value::Int((*left).max(*right))),
-        _ => Err(EvalError::TypeMismatch),
+        _ => Err(EvalError::TypeMismatch { span: None }),
     }
 }
 
 pub fn min(arguments: &[Value]) -> Result<Value, EvalError> {
     match arguments {
         [Value::Int(left), Value::Int(right)] => Ok(Value::Int((*left).min(*right))),
-        _ => Err(EvalError::TypeMismatch),
+        _ => Err(EvalError::TypeMismatch { span: None }),
     }
 }
 
@@ -103,6 +103,12 @@ mod tests {
         let ast = Parser::new(input).parse_stmnts().expect("valid input");
         let mut scope = Scope::child(stdlib::new());
         evaluate_ast(&ast, &mut scope)
+    }
+
+    fn evaluate_error(input: &str) -> String {
+        evaluate(input)
+            .expect_err("expected an evaluation error")
+            .to_string()
     }
 
     #[test]
@@ -125,9 +131,9 @@ mod tests {
 
     #[test]
     fn expect_errors() {
-        let cases = [("10.clamp(1)", Err(EvalError::TypeMismatch))];
+        let cases = [("10.clamp(1)", "type mismatch")];
         for (expression, expected) in cases {
-            assert_eq!(evaluate(expression), expected, "{expression}");
+            assert_eq!(evaluate_error(expression), expected, "{expression}");
         }
     }
 }

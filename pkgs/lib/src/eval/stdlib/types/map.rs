@@ -19,13 +19,13 @@ pub fn create_map() -> Map {
 pub fn equals(arguments: &[Value]) -> Result<Value, EvalError> {
     match arguments {
         [Value::Map(left), Value::Map(right)] => Ok(Value::Bool(left == right)),
-        _ => Err(EvalError::TypeMismatch),
+        _ => Err(EvalError::TypeMismatch { span: None }),
     }
 }
 
 pub fn is_empty(arguments: &[Value]) -> Result<Value, EvalError> {
     let [Value::Map(map)] = arguments else {
-        return Err(EvalError::TypeMismatch);
+        return Err(EvalError::TypeMismatch { span: None });
     };
 
     Ok(Value::Bool(map.is_empty()))
@@ -33,7 +33,7 @@ pub fn is_empty(arguments: &[Value]) -> Result<Value, EvalError> {
 
 pub fn keys(arguments: &[Value]) -> Result<Value, EvalError> {
     let [Value::Map(values)] = arguments else {
-        return Err(EvalError::TypeMismatch);
+        return Err(EvalError::TypeMismatch { span: None });
     };
 
     Ok(Value::List(
@@ -46,7 +46,7 @@ pub fn keys(arguments: &[Value]) -> Result<Value, EvalError> {
 
 pub fn values(arguments: &[Value]) -> Result<Value, EvalError> {
     let [Value::Map(map)] = arguments else {
-        return Err(EvalError::TypeMismatch);
+        return Err(EvalError::TypeMismatch { span: None });
     };
 
     Ok(Value::List(map.values().cloned().collect()))
@@ -54,11 +54,11 @@ pub fn values(arguments: &[Value]) -> Result<Value, EvalError> {
 
 pub fn len(arguments: &[Value]) -> Result<Value, EvalError> {
     let [Value::Map(map)] = arguments else {
-        return Err(EvalError::TypeMismatch);
+        return Err(EvalError::TypeMismatch { span: None });
     };
 
     let Ok(length) = i64::try_from(map.len()) else {
-        return Err(EvalError::Overflow);
+        return Err(EvalError::Overflow { span: None });
     };
     Ok(Value::Int(length))
 }
@@ -76,6 +76,12 @@ mod tests {
         let ast = Parser::new(input).parse_stmnts().expect("valid input");
         let mut scope = Scope::child(stdlib::new());
         evaluate_ast(&ast, &mut scope)
+    }
+
+    fn evaluate_error(input: &str) -> String {
+        evaluate(input)
+            .expect_err("expected an evaluation error")
+            .to_string()
     }
 
     #[test]
@@ -97,9 +103,9 @@ mod tests {
 
     #[test]
     fn expect_errors() {
-        let cases = [("{}.keys(1)", Err(EvalError::TypeMismatch))];
+        let cases = [("{}.keys(1)", "type mismatch")];
         for (expression, expected) in cases {
-            assert_eq!(evaluate(expression), expected, "{expression}");
+            assert_eq!(evaluate_error(expression), expected, "{expression}");
         }
     }
 }

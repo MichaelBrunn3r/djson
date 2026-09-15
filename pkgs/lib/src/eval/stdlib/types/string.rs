@@ -38,10 +38,12 @@ pub fn create_map() -> Map {
 pub fn len_chars(arguments: &[Value]) -> Result<Value, EvalError> {
     match arguments {
         [Value::Str(value)] => {
-            let length = i64::try_from(value.chars().count()).map_err(|_| EvalError::Overflow)?;
+            let Ok(length) = i64::try_from(value.chars().count()) else {
+                return Err(EvalError::Overflow { span: None });
+            };
             Ok(Value::Int(length))
         }
-        _ => Err(EvalError::TypeMismatch),
+        _ => Err(EvalError::TypeMismatch { span: None }),
     }
 }
 
@@ -49,39 +51,39 @@ pub fn len_bytes(arguments: &[Value]) -> Result<Value, EvalError> {
     match arguments {
         [Value::Str(value)] => {
             let Ok(length) = i64::try_from(value.len()) else {
-                return Err(EvalError::Overflow);
+                return Err(EvalError::Overflow { span: None });
             };
             Ok(Value::Int(length))
         }
-        _ => Err(EvalError::TypeMismatch),
+        _ => Err(EvalError::TypeMismatch { span: None }),
     }
 }
 
 pub const fn is_empty(arguments: &[Value]) -> Result<Value, EvalError> {
     match arguments {
         [Value::Str(value)] => Ok(Value::Bool(value.is_empty())),
-        _ => Err(EvalError::TypeMismatch),
+        _ => Err(EvalError::TypeMismatch { span: None }),
     }
 }
 
 pub fn is_blank(arguments: &[Value]) -> Result<Value, EvalError> {
     match arguments {
         [Value::Str(value)] => Ok(Value::Bool(value.trim().is_empty())),
-        _ => Err(EvalError::TypeMismatch),
+        _ => Err(EvalError::TypeMismatch { span: None }),
     }
 }
 
 pub fn is_ascii(arguments: &[Value]) -> Result<Value, EvalError> {
     match arguments {
         [Value::Str(value)] => Ok(Value::Bool(value.is_ascii())),
-        _ => Err(EvalError::TypeMismatch),
+        _ => Err(EvalError::TypeMismatch { span: None }),
     }
 }
 
 pub fn contains(arguments: &[Value]) -> Result<Value, EvalError> {
     match arguments {
         [Value::Str(value), Value::Str(needle)] => Ok(Value::Bool(value.contains(needle.as_str()))),
-        _ => Err(EvalError::TypeMismatch),
+        _ => Err(EvalError::TypeMismatch { span: None }),
     }
 }
 
@@ -90,7 +92,7 @@ pub fn starts_with(arguments: &[Value]) -> Result<Value, EvalError> {
         [Value::Str(value), Value::Str(prefix)] => {
             Ok(Value::Bool(value.starts_with(prefix.as_str())))
         }
-        _ => Err(EvalError::TypeMismatch),
+        _ => Err(EvalError::TypeMismatch { span: None }),
     }
 }
 
@@ -99,7 +101,7 @@ pub fn ends_with(arguments: &[Value]) -> Result<Value, EvalError> {
         [Value::Str(value), Value::Str(suffix)] => {
             Ok(Value::Bool(value.ends_with(suffix.as_str())))
         }
-        _ => Err(EvalError::TypeMismatch),
+        _ => Err(EvalError::TypeMismatch { span: None }),
     }
 }
 
@@ -111,7 +113,7 @@ pub fn remove_prefix(arguments: &[Value]) -> Result<Value, EvalError> {
                 .unwrap_or(value)
                 .to_owned(),
         )),
-        _ => Err(EvalError::TypeMismatch),
+        _ => Err(EvalError::TypeMismatch { span: None }),
     }
 }
 
@@ -123,7 +125,7 @@ pub fn remove_suffix(arguments: &[Value]) -> Result<Value, EvalError> {
                 .unwrap_or(value)
                 .to_owned(),
         )),
-        _ => Err(EvalError::TypeMismatch),
+        _ => Err(EvalError::TypeMismatch { span: None }),
     }
 }
 
@@ -135,10 +137,12 @@ pub fn count(arguments: &[Value]) -> Result<Value, EvalError> {
             } else {
                 value.matches(needle.as_str()).count()
             };
-            let count = i64::try_from(count).map_err(|_| EvalError::Overflow)?;
+            let Ok(count) = i64::try_from(count) else {
+                return Err(EvalError::Overflow { span: None });
+            };
             Ok(Value::Int(count))
         }
-        _ => Err(EvalError::TypeMismatch),
+        _ => Err(EvalError::TypeMismatch { span: None }),
     }
 }
 
@@ -150,11 +154,11 @@ pub fn find(arguments: &[Value]) -> Result<Value, EvalError> {
                 .map(|index| value[..index].chars().count())
                 .map(i64::try_from)
                 .transpose()
-                .map_err(|_| EvalError::Overflow)?
+                .map_err(|_| EvalError::Overflow { span: None })?
                 .unwrap_or(-1);
             Ok(Value::Int(index))
         }
-        _ => Err(EvalError::TypeMismatch),
+        _ => Err(EvalError::TypeMismatch { span: None }),
     }
 }
 
@@ -166,7 +170,7 @@ pub fn split(arguments: &[Value]) -> Result<Value, EvalError> {
                 .map(|part| Value::Str(part.to_owned()))
                 .collect(),
         )),
-        _ => Err(EvalError::TypeMismatch),
+        _ => Err(EvalError::TypeMismatch { span: None }),
     }
 }
 
@@ -178,42 +182,42 @@ pub fn lines(arguments: &[Value]) -> Result<Value, EvalError> {
                 .map(|line| Value::Str(line.to_owned()))
                 .collect(),
         )),
-        _ => Err(EvalError::TypeMismatch),
+        _ => Err(EvalError::TypeMismatch { span: None }),
     }
 }
 
 pub fn uppercase(arguments: &[Value]) -> Result<Value, EvalError> {
     match arguments {
         [Value::Str(value)] => Ok(Value::Str(value.to_uppercase())),
-        _ => Err(EvalError::TypeMismatch),
+        _ => Err(EvalError::TypeMismatch { span: None }),
     }
 }
 
 pub fn trim(arguments: &[Value]) -> Result<Value, EvalError> {
     match arguments {
         [Value::Str(value)] => Ok(Value::Str(value.trim().to_owned())),
-        _ => Err(EvalError::TypeMismatch),
+        _ => Err(EvalError::TypeMismatch { span: None }),
     }
 }
 
 pub fn trim_start(arguments: &[Value]) -> Result<Value, EvalError> {
     match arguments {
         [Value::Str(value)] => Ok(Value::Str(value.trim_start().to_owned())),
-        _ => Err(EvalError::TypeMismatch),
+        _ => Err(EvalError::TypeMismatch { span: None }),
     }
 }
 
 pub fn trim_end(arguments: &[Value]) -> Result<Value, EvalError> {
     match arguments {
         [Value::Str(value)] => Ok(Value::Str(value.trim_end().to_owned())),
-        _ => Err(EvalError::TypeMismatch),
+        _ => Err(EvalError::TypeMismatch { span: None }),
     }
 }
 
 pub fn lowercase(arguments: &[Value]) -> Result<Value, EvalError> {
     match arguments {
         [Value::Str(value)] => Ok(Value::Str(value.to_lowercase())),
-        _ => Err(EvalError::TypeMismatch),
+        _ => Err(EvalError::TypeMismatch { span: None }),
     }
 }
 
@@ -222,30 +226,37 @@ pub fn replace(arguments: &[Value]) -> Result<Value, EvalError> {
         [Value::Str(value), Value::Str(from), Value::Str(to)] => {
             Ok(Value::Str(value.replace(from.as_str(), to.as_str())))
         }
-        _ => Err(EvalError::TypeMismatch),
+        _ => Err(EvalError::TypeMismatch { span: None }),
     }
 }
 
 pub fn repeat(arguments: &[Value]) -> Result<Value, EvalError> {
     match arguments {
         [Value::Str(value), Value::Int(count)] if *count >= 0 => {
-            let count = usize::try_from(*count).map_err(|_| EvalError::Overflow)?;
-            value.len().checked_mul(count).ok_or(EvalError::Overflow)?;
+            let Ok(count) = usize::try_from(*count) else {
+                return Err(EvalError::Overflow { span: None });
+            };
+            value
+                .len()
+                .checked_mul(count)
+                .ok_or(EvalError::Overflow { span: None })?;
             Ok(Value::Str(value.repeat(count)))
         }
-        _ => Err(EvalError::TypeMismatch),
+        _ => Err(EvalError::TypeMismatch { span: None }),
     }
 }
 
 pub fn pad_start(arguments: &[Value]) -> Result<Value, EvalError> {
     let [Value::Str(value), Value::Int(width), Value::Str(padding)] = arguments else {
-        return Err(EvalError::TypeMismatch);
+        return Err(EvalError::TypeMismatch { span: None });
     };
     if *width < 0 || padding.is_empty() {
-        return Err(EvalError::TypeMismatch);
+        return Err(EvalError::TypeMismatch { span: None });
     }
 
-    let width = usize::try_from(*width).map_err(|_| EvalError::Overflow)?;
+    let Ok(width) = usize::try_from(*width) else {
+        return Err(EvalError::Overflow { span: None });
+    };
     let length = value.chars().count();
     let missing = width.saturating_sub(length);
     let mut result = padding.chars().cycle().take(missing).collect::<String>();
@@ -255,13 +266,15 @@ pub fn pad_start(arguments: &[Value]) -> Result<Value, EvalError> {
 
 pub fn pad_end(arguments: &[Value]) -> Result<Value, EvalError> {
     let [Value::Str(value), Value::Int(width), Value::Str(padding)] = arguments else {
-        return Err(EvalError::TypeMismatch);
+        return Err(EvalError::TypeMismatch { span: None });
     };
     if *width < 0 || padding.is_empty() {
-        return Err(EvalError::TypeMismatch);
+        return Err(EvalError::TypeMismatch { span: None });
     }
 
-    let width = usize::try_from(*width).map_err(|_| EvalError::Overflow)?;
+    let Ok(width) = usize::try_from(*width) else {
+        return Err(EvalError::Overflow { span: None });
+    };
     let length = value.chars().count();
     let missing = width.saturating_sub(length);
     let mut result = value.clone();
@@ -272,7 +285,7 @@ pub fn pad_end(arguments: &[Value]) -> Result<Value, EvalError> {
 pub fn reverse(arguments: &[Value]) -> Result<Value, EvalError> {
     match arguments {
         [Value::Str(value)] => Ok(Value::Str(value.chars().rev().collect::<String>())),
-        _ => Err(EvalError::TypeMismatch),
+        _ => Err(EvalError::TypeMismatch { span: None }),
     }
 }
 
@@ -289,6 +302,12 @@ mod tests {
         let ast = Parser::new(input).parse_stmnts().expect("valid input");
         let mut scope = Scope::child(stdlib::new());
         evaluate_ast(&ast, &mut scope)
+    }
+
+    fn evaluate_error(input: &str) -> String {
+        evaluate(input)
+            .expect_err("expected an evaluation error")
+            .to_string()
     }
 
     #[test]
@@ -327,16 +346,10 @@ mod tests {
     #[test]
     fn rejects_invalid_string_method_arguments() {
         assert_eq!(
-            evaluate("1.len_chars()"),
-            Err(EvalError::UnknownFunction("len_chars".to_owned()))
+            evaluate_error("1.len_chars()"),
+            "unknown function `len_chars`"
         );
-        assert_eq!(
-            evaluate("\"hello\".contains(1)"),
-            Err(EvalError::TypeMismatch)
-        );
-        assert_eq!(
-            evaluate("\"hello\".repeat(-1)"),
-            Err(EvalError::TypeMismatch)
-        );
+        assert_eq!(evaluate_error("\"hello\".contains(1)"), "type mismatch");
+        assert_eq!(evaluate_error("\"hello\".repeat(-1)"), "type mismatch");
     }
 }

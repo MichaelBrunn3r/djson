@@ -33,7 +33,7 @@ pub fn create_map() -> Map {
 pub const fn abs(arguments: &[Value]) -> Result<Value, EvalError> {
     match arguments {
         [Value::Float(value)] => Ok(Value::Float(value.abs())),
-        _ => Err(EvalError::TypeMismatch),
+        _ => Err(EvalError::TypeMismatch { span: None }),
     }
 }
 
@@ -44,7 +44,7 @@ pub fn clamp(arguments: &[Value]) -> Result<Value, EvalError> {
             Value::Float(minimum),
             Value::Float(maximum),
         ] if minimum <= maximum => Ok(Value::Float(value.clamp(*minimum, *maximum))),
-        _ => Err(EvalError::TypeMismatch),
+        _ => Err(EvalError::TypeMismatch { span: None }),
     }
 }
 
@@ -53,11 +53,11 @@ pub fn ceil(arguments: &[Value]) -> Result<Value, EvalError> {
         [Value::Float(value)] => {
             let value = value.ceil();
             if !value.is_finite() || value < i64::MIN as f64 || value >= i64::MAX as f64 {
-                return Err(EvalError::Overflow);
+                return Err(EvalError::Overflow { span: None });
             }
             Ok(Value::Int(value as i64))
         }
-        _ => Err(EvalError::TypeMismatch),
+        _ => Err(EvalError::TypeMismatch { span: None }),
     }
 }
 
@@ -66,11 +66,11 @@ pub fn floor(arguments: &[Value]) -> Result<Value, EvalError> {
         [Value::Float(value)] => {
             let value = value.floor();
             if !value.is_finite() || value < i64::MIN as f64 || value >= i64::MAX as f64 {
-                return Err(EvalError::Overflow);
+                return Err(EvalError::Overflow { span: None });
             }
             Ok(Value::Int(value as i64))
         }
-        _ => Err(EvalError::TypeMismatch),
+        _ => Err(EvalError::TypeMismatch { span: None }),
     }
 }
 
@@ -79,25 +79,25 @@ pub fn round(arguments: &[Value]) -> Result<Value, EvalError> {
         [Value::Float(value)] => {
             let value = value.round();
             if !value.is_finite() || value < i64::MIN as f64 || value >= i64::MAX as f64 {
-                return Err(EvalError::Overflow);
+                return Err(EvalError::Overflow { span: None });
             }
             Ok(Value::Int(value as i64))
         }
-        _ => Err(EvalError::TypeMismatch),
+        _ => Err(EvalError::TypeMismatch { span: None }),
     }
 }
 
 pub fn sqrt(arguments: &[Value]) -> Result<Value, EvalError> {
     match arguments {
         [Value::Float(value)] => Ok(Value::Float(value.sqrt())),
-        _ => Err(EvalError::TypeMismatch),
+        _ => Err(EvalError::TypeMismatch { span: None }),
     }
 }
 
 pub fn ln(arguments: &[Value]) -> Result<Value, EvalError> {
     match arguments {
         [Value::Float(value)] => Ok(Value::Float(value.ln())),
-        _ => Err(EvalError::TypeMismatch),
+        _ => Err(EvalError::TypeMismatch { span: None }),
     }
 }
 
@@ -105,56 +105,56 @@ pub fn log(arguments: &[Value]) -> Result<Value, EvalError> {
     match arguments {
         [Value::Float(value), Value::Int(base)] => Ok(Value::Float(value.log(*base as f64))),
         [Value::Float(value), Value::Float(base)] => Ok(Value::Float(value.log(*base))),
-        _ => Err(EvalError::TypeMismatch),
+        _ => Err(EvalError::TypeMismatch { span: None }),
     }
 }
 
 pub fn log2(arguments: &[Value]) -> Result<Value, EvalError> {
     match arguments {
         [Value::Float(value)] => Ok(Value::Float(value.log2())),
-        _ => Err(EvalError::TypeMismatch),
+        _ => Err(EvalError::TypeMismatch { span: None }),
     }
 }
 
 pub fn log10(arguments: &[Value]) -> Result<Value, EvalError> {
     match arguments {
         [Value::Float(value)] => Ok(Value::Float(value.log10())),
-        _ => Err(EvalError::TypeMismatch),
+        _ => Err(EvalError::TypeMismatch { span: None }),
     }
 }
 
 pub const fn max(arguments: &[Value]) -> Result<Value, EvalError> {
     match arguments {
         [Value::Float(left), Value::Float(right)] => Ok(Value::Float(left.max(*right))),
-        _ => Err(EvalError::TypeMismatch),
+        _ => Err(EvalError::TypeMismatch { span: None }),
     }
 }
 
 pub const fn min(arguments: &[Value]) -> Result<Value, EvalError> {
     match arguments {
         [Value::Float(left), Value::Float(right)] => Ok(Value::Float(left.min(*right))),
-        _ => Err(EvalError::TypeMismatch),
+        _ => Err(EvalError::TypeMismatch { span: None }),
     }
 }
 
 pub const fn is_finite(arguments: &[Value]) -> Result<Value, EvalError> {
     match arguments {
         [Value::Float(value)] => Ok(Value::Bool(value.is_finite())),
-        _ => Err(EvalError::TypeMismatch),
+        _ => Err(EvalError::TypeMismatch { span: None }),
     }
 }
 
 pub const fn is_infinite(arguments: &[Value]) -> Result<Value, EvalError> {
     match arguments {
         [Value::Float(value)] => Ok(Value::Bool(value.is_infinite())),
-        _ => Err(EvalError::TypeMismatch),
+        _ => Err(EvalError::TypeMismatch { span: None }),
     }
 }
 
 pub const fn is_nan(arguments: &[Value]) -> Result<Value, EvalError> {
     match arguments {
         [Value::Float(value)] => Ok(Value::Bool(value.is_nan())),
-        _ => Err(EvalError::TypeMismatch),
+        _ => Err(EvalError::TypeMismatch { span: None }),
     }
 }
 

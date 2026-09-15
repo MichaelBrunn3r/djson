@@ -49,13 +49,16 @@ pub fn new() -> Rc<Scope> {
 /// [`EvalError::TypeMismatch`] when the argument is not a string.
 pub fn import(arguments: &[Value]) -> Result<Value, EvalError> {
     let [Value::Str(name)] = arguments else {
-        return Err(EvalError::TypeMismatch);
+        return Err(EvalError::TypeMismatch { span: None });
     };
 
     create_modules()
         .get_path(name)
         .cloned()
-        .ok_or_else(|| EvalError::UnknownModule(name.to_owned()))
+        .ok_or_else(|| EvalError::UnknownModule {
+            name: name.to_owned(),
+            span: None,
+        })
 }
 
 pub(crate) fn type_member(value: &Value, name: &str) -> Option<Value> {

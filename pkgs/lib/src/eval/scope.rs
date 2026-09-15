@@ -39,7 +39,10 @@ impl Scope {
     /// this scope.
     pub fn bind_value(&mut self, name: &str, value: Value) -> Result<(), EvalError> {
         if self.values.contains_key(name) {
-            return Err(EvalError::SymbolConflict(name.to_owned()));
+            return Err(EvalError::SymbolConflict {
+                name: name.to_owned(),
+                span: None,
+            });
         }
         self.values.insert(name.to_owned(), value);
         Ok(())
@@ -54,7 +57,10 @@ impl Scope {
             if self.values.contains_key(name)
                 || bindings[..index].iter().any(|(other, _)| other == name)
             {
-                return Err(EvalError::SymbolConflict(name.clone()));
+                return Err(EvalError::SymbolConflict {
+                    name: name.clone(),
+                    span: None,
+                });
             }
         }
         self.values.extend(bindings);

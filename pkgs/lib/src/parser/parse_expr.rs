@@ -1,9 +1,12 @@
+use miette::SourceSpan;
+
 use crate::{
-    lexer::token::{Spanned, Token},
+    lexer::token::Token,
     parser::{
         Parser, ParserResult,
         ast::{Expr, Identifier, InfixOp, KV, PrefixOp},
     },
+    span::Spanned,
 };
 
 impl<'input> Parser<'input> {
@@ -12,7 +15,7 @@ impl<'input> Parser<'input> {
         &mut self,
         first: Spanned<Token<'input>>,
         min_bp: u8,
-    ) -> ParserResult<Expr<'input>> {
+    ) -> ParserResult<Spanned<Expr<'input>>> {
         let start = first.span;
         let mut lhs = self.parse_lhs(first)?;
 
@@ -29,67 +32,76 @@ impl<'input> Parser<'input> {
             lhs = self.parse_rhs_extension(lhs, rhs_bp, op)?;
         }
 
-        let end = self.last_span.offset() + self.last_span.len();
-        self.last_expression_span = (start.offset(), end.saturating_sub(start.offset())).into();
-        Ok(lhs)
+        Ok(self.spanned(start, lhs.value))
     }
 
     /// Parses the left-hand side of an expression.
-    fn parse_lhs(&mut self, token: Spanned<Token<'input>>) -> ParserResult<Expr<'input>> {
-        let Spanned { value, .. } = token;
-        match value {
-            Token::Bool(value) => self.parse_postfix_op(Expr::Bool(value)),
-            Token::Int(value) => self.parse_postfix_op(Expr::Int(value)),
-            Token::Float(value) => self.parse_postfix_op(Expr::Float(value)),
-            Token::Str(value) => self.parse_postfix_op(Expr::Str(value)),
-            Token::LBracket => self.parse_list(),
-            Token::LBrace => self.parse_map(),
-            Token::Id("if") if !self.next_is(&Token::Colon) => self.parse_if(),
-            Token::Id(value) => self.parse_postfix_op(Expr::Id(Identifier::Simple(value))),
+    fn parse_lhs(&mut self, token: Spanned<Token<'input>>) -> ParserResult<Spanned<Expr<'input>>> {
+        let span = token.span;
+        match token.value {
+            Token::Bool(value) => self.parse_postfix_op(span, Expr::Bool(value)),
+            Token::Int(value) => self.parse_postfix_op(span, Expr::Int(value)),
+            Token::Float(value) => self.parse_postfix_op(span, Expr::Float(value)),
+            Token::Str(value) => self.parse_postfix_op(span, Expr::Str(value)),
+            Token::LBracket => self.parse_list(span),
+            Token::LBrace => self.parse_map(span),
+            Token::Id("if") if !self.next_is(&Token::Colon) => self.parse_if(span),
+            Token::Id(value) => self.parse_postfix_op(span, Expr::Id(Identifier::Simple(value))),
             Token::LParen => {
                 let first = self.next_token()?;
                 let expression = self.parse_expr(first, 0)?;
                 self.expect_next_token(&Token::RParen)?;
-                self.parse_postfix_op(expression)
+                self.parse_postfix_op(self.span_from(span), expression.value)
             }
-            Token::Add => self.parse_prefix_op(PrefixOp::Positive),
-            Token::Sub => self.parse_prefix_op(PrefixOp::Negative),
-            token => Err(Self::err_unexpected(
-                &Spanned {
-                    value: token,
-                    span: self.last_span,
-                },
-                "expression",
-            )),
+            Token::Add => self.parse_prefix_op(span, PrefixOp::Positive),
+            Token::Sub => self.parse_prefix_op(span, PrefixOp::Negative),
+            value => Err(Self::err_unexpected(&Spanned { value, span }, "expression")),
         }
     }
 
     fn parse_rhs_extension(
         &mut self,
-        lhs: Expr<'input>,
+        lhs: Spanned<Expr<'input>>,
         rhs_bp: u8,
         op: InfixOp,
-    ) -> ParserResult<Expr<'input>> {
+    ) -> ParserResult<Spanned<Expr<'input>>> {
+        let start = lhs.span;
         let first = self.next_token()?;
         let right = self.parse_expr(first, rhs_bp)?;
-        Ok(Expr::Binary {
-            left: Box::new(lhs),
-            op,
-            right: Box::new(right),
-        })
+        Ok(self.spanned(
+            start,
+            Expr::Binary {
+                left: Box::new(lhs),
+                op,
+                right: Box::new(right),
+            },
+        ))
     }
 
     /// Parses a prefix operator and its operand.
-    fn parse_prefix_op(&mut self, op: PrefixOp) -> ParserResult<Expr<'input>> {
+    fn parse_prefix_op(
+        &mut self,
+        start: SourceSpan,
+        op: PrefixOp,
+    ) -> ParserResult<Spanned<Expr<'input>>> {
         let first = self.next_token()?;
         let value = self.parse_expr(first, 25)?;
-        Ok(Expr::Unary {
-            op,
-            value: Box::new(value),
-        })
+        Ok(self.spanned(
+            start,
+            Expr::Unary {
+                op,
+                value: Box::new(value),
+            },
+        ))
     }
 
-    fn parse_postfix_op(&mut self, mut expr: Expr<'input>) -> ParserResult<Expr<'input>> {
+    fn parse_postfix_op(
+        &mut self,
+        start: SourceSpan,
+        expr: Expr<'input>,
+    ) -> ParserResult<Spanned<Expr<'input>>> {
+        let mut expr = self.spanned(start, expr);
+
         loop {
             expr = match self.tokens.peek() {
                 Some(Ok(Spanned {
@@ -105,22 +117,29 @@ impl<'input> Parser<'input> {
                             return Err(Self::err_unexpected(&token, "an identifier"));
                         }
                     };
-                    Expr::Access {
-                        object: Box::new(expr),
-                        name,
-                    }
+                    self.spanned(
+                        start,
+                        Expr::Access {
+                            object: Box::new(expr),
+                            name,
+                        },
+                    )
                 }
                 Some(Ok(Spanned {
                     value: Token::LParen,
                     ..
-                })) => self.parse_call(expr)?,
+                })) => self.parse_call(start, expr)?,
                 _ => return Ok(expr),
             };
         }
     }
 
     /// Parses a function call and its arguments.
-    fn parse_call(&mut self, callee: Expr<'input>) -> ParserResult<Expr<'input>> {
+    fn parse_call(
+        &mut self,
+        start: SourceSpan,
+        callee: Spanned<Expr<'input>>,
+    ) -> ParserResult<Spanned<Expr<'input>>> {
         self.expect_next_token(&Token::LParen)?;
         let mut arguments = Vec::new();
         self.skip_separators()?;
@@ -162,14 +181,17 @@ impl<'input> Parser<'input> {
         }
 
         self.expect_next_token(&Token::RParen)?;
-        Ok(Expr::Call {
-            callee: Box::new(callee),
-            arguments,
-        })
+        Ok(self.spanned(
+            start,
+            Expr::Call {
+                callee: Box::new(callee),
+                arguments,
+            },
+        ))
     }
 
     /// Parses a list literal and its elements.
-    fn parse_list(&mut self) -> ParserResult<Expr<'input>> {
+    fn parse_list(&mut self, start: SourceSpan) -> ParserResult<Spanned<Expr<'input>>> {
         let mut values = Vec::new();
         self.skip_separators()?;
 
@@ -210,11 +232,11 @@ impl<'input> Parser<'input> {
         }
 
         self.expect_next_token(&Token::RBracket)?;
-        self.parse_postfix_op(Expr::List(values))
+        self.parse_postfix_op(start, Expr::List(values))
     }
 
     /// Parses a map literal and its entries.
-    fn parse_map(&mut self) -> ParserResult<Expr<'input>> {
+    fn parse_map(&mut self, start: SourceSpan) -> ParserResult<Spanned<Expr<'input>>> {
         let mut entries = Vec::new();
         self.skip_separators()?;
 
@@ -226,17 +248,33 @@ impl<'input> Parser<'input> {
             }))
         ) {
             loop {
-                let key = match self.next_token()? {
-                    Spanned {
-                        value: Token::Id(value) | Token::Str(value),
-                        ..
-                    } => value,
-                    token => return Err(Self::err_unexpected(&token, "a map key")),
+                let token = self.next_token()?;
+                let key_span = token.span;
+                let key = match token.value {
+                    Token::Id(value) | Token::Str(value) => value,
+                    value => {
+                        return Err(Self::err_unexpected(
+                            &Spanned {
+                                value,
+                                span: key_span,
+                            },
+                            "a map key",
+                        ));
+                    }
                 };
                 self.expect_next_token(&Token::Colon)?;
                 let first = self.next_token()?;
                 let expr = self.parse_expr(first, 0)?;
-                entries.push(KV { key, expr });
+                entries.push(self.spanned(
+                    key_span,
+                    KV {
+                        key: Spanned {
+                            value: key,
+                            span: key_span,
+                        },
+                        expr,
+                    },
+                ));
 
                 if matches!(
                     self.tokens.peek(),
@@ -264,11 +302,11 @@ impl<'input> Parser<'input> {
         }
 
         self.expect_next_token(&Token::RBrace)?;
-        self.parse_postfix_op(Expr::Map(entries))
+        self.parse_postfix_op(start, Expr::Map(entries))
     }
 
     /// Parses a conditional expression with `then` and `else` branches.
-    fn parse_if(&mut self) -> ParserResult<Expr<'input>> {
+    fn parse_if(&mut self, start: SourceSpan) -> ParserResult<Spanned<Expr<'input>>> {
         let condition = {
             let first = self.next_token()?;
             self.parse_expr(first, 0)?
@@ -313,11 +351,14 @@ impl<'input> Parser<'input> {
             expr
         };
 
-        self.parse_postfix_op(Expr::If {
-            condition: Box::new(condition),
-            then: Box::new(then),
-            r#else: Box::new(r#else),
-        })
+        self.parse_postfix_op(
+            start,
+            Expr::If {
+                condition: Box::new(condition),
+                then: Box::new(then),
+                r#else: Box::new(r#else),
+            },
+        )
     }
 }
 

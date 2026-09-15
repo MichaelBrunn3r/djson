@@ -1,6 +1,7 @@
 use std::fmt::{self, Write};
 
 use super::{AST, Expr, Identifier, InfixOp, Pattern, PrefixOp, Statement};
+use crate::span::Spanned;
 
 pub struct ASTPretty<'ast, 'config, 'input> {
     ast: &'ast AST<'input>,
@@ -50,7 +51,7 @@ impl AST<'_> {
         let statements = join(
             self.statements
                 .iter()
-                .map(|statement| statement.pretty_doc(config)),
+                .map(|statement| statement.value.pretty_doc(config)),
             &concat([text(","), Doc::Line]),
         );
         group(concat([
@@ -71,7 +72,7 @@ impl Expr<'_> {
             Self::Str(value) => text(format!("{value:?}")),
             Self::List(values) => {
                 let values = join(
-                    values.iter().map(|value| value.pretty_doc(config)),
+                    values.iter().map(|value| value.value.pretty_doc(config)),
                     &concat([text(","), Doc::Line]),
                 );
                 group(concat([
@@ -83,11 +84,11 @@ impl Expr<'_> {
             }
             Self::Map(entries) => {
                 let entries = join(
-                    entries.iter().map(|entry| {
+                    entries.iter().map(|Spanned { value: entry, .. }| {
                         concat([
-                            key_document(entry.key),
+                            key_document(entry.key.value),
                             text(": "),
-                            entry.expr.pretty_doc(config),
+                            entry.expr.value.pretty_doc(config),
                         ])
                     }),
                     &concat([text(","), Doc::Line]),
@@ -107,7 +108,7 @@ impl Expr<'_> {
                 };
                 concat([
                     text(format!("{operator}(")),
-                    value.pretty_doc(config),
+                    value.value.pretty_doc(config),
                     text(")"),
                 ])
             }
@@ -122,27 +123,27 @@ impl Expr<'_> {
                 };
                 concat([
                     text(format!("{operator}(")),
-                    left.pretty_doc(config),
+                    left.value.pretty_doc(config),
                     text(", "),
-                    right.pretty_doc(config),
+                    right.value.pretty_doc(config),
                     text(")"),
                 ])
             }
             Self::Access { object, name } => concat([
                 text("Access("),
-                object.pretty_doc(config),
+                object.value.pretty_doc(config),
                 text(", "),
                 text(*name),
                 text(")"),
             ]),
             Self::Call { callee, arguments } => {
                 let arguments = join(
-                    arguments.iter().map(|argument| argument.pretty_doc(config)),
+                    arguments.iter().map(|arg| arg.value.pretty_doc(config)),
                     &concat([text(","), Doc::Line]),
                 );
                 group(concat([
                     text("Call("),
-                    callee.pretty_doc(config),
+                    callee.value.pretty_doc(config),
                     text(", ["),
                     nest(config.indent_width, concat([Doc::SoftLine, arguments])),
                     Doc::SoftLine,
@@ -155,11 +156,11 @@ impl Expr<'_> {
                 r#else: else_branch,
             } => concat([
                 text("If("),
-                condition.pretty_doc(config),
+                condition.value.pretty_doc(config),
                 text(", "),
-                then_branch.pretty_doc(config),
+                then_branch.value.pretty_doc(config),
                 text(", "),
-                else_branch.pretty_doc(config),
+                else_branch.value.pretty_doc(config),
                 text(")"),
             ]),
         }
@@ -169,18 +170,24 @@ impl Expr<'_> {
 impl Statement<'_> {
     fn pretty_doc(&self, config: &ASTPrettyConfig) -> Doc {
         match self {
-            Self::Expr(expr) => concat([text("Expr("), expr.pretty_doc(config), text(")")]),
-            Self::KV(pair) => concat([
-                key_document(pair.key),
-                text(": "),
-                pair.expr.pretty_doc(config),
-            ]),
-            Self::Let(binding) => concat([
-                text("let "),
-                binding.pattern.pretty_doc(config),
-                text(" = "),
-                binding.expr.pretty_doc(config),
-            ]),
+            Self::Expr(expr) => concat([text("Expr("), expr.value.pretty_doc(config), text(")")]),
+            Self::KV(pair) => {
+                let pair = &pair.value;
+                concat([
+                    key_document(pair.key.value),
+                    text(": "),
+                    pair.expr.value.pretty_doc(config),
+                ])
+            }
+            Self::Let(binding) => {
+                let binding = &binding.value;
+                concat([
+                    text("let "),
+                    binding.pattern.value.pretty_doc(config),
+                    text(" = "),
+                    binding.expr.value.pretty_doc(config),
+                ])
+            }
         }
     }
 }
@@ -192,23 +199,28 @@ impl Pattern<'_> {
             Self::Map(patterns) => concat([
                 text("{"),
                 join(
-                    patterns.iter().map(|pattern| {
+                    patterns.iter().map(|spanned| {
+                        let pattern = &spanned.value;
                         if let Some(default) = &pattern.default {
                             return concat([
                                 text(pattern.key),
                                 text(" = "),
-                                default.pretty_doc(config),
+                                default.value.pretty_doc(config),
                             ]);
                         }
-                        if matches!(&pattern.pattern, Pattern::Name(name) if *name == pattern.key) {
+                        if matches!(&pattern.pattern.value, Pattern::Name(name) if *name == pattern.key)
+                        {
                             text(pattern.key)
-                        } else if matches!(&pattern.pattern, Pattern::List { .. }) {
-                            concat([text(pattern.key), pattern.pattern.pretty_doc(config)])
+                        } else if matches!(&pattern.pattern.value, Pattern::List { .. }) {
+                            concat([
+                                text(pattern.key),
+                                pattern.pattern.value.pretty_doc(config),
+                            ])
                         } else {
                             concat([
                                 text(pattern.key),
                                 text("."),
-                                pattern.pattern.pretty_doc(config),
+                                pattern.pattern.value.pretty_doc(config),
                             ])
                         }
                     }),
@@ -221,8 +233,8 @@ impl Pattern<'_> {
                 join(
                     patterns
                         .iter()
-                        .map(|pattern| pattern.pretty_doc(config))
-                        .chain(rest.iter().map(|name| concat([text(".."), text(*name)]))),
+                        .map(|pattern| pattern.value.pretty_doc(config))
+                        .chain(rest.iter().map(|name| concat([text(".."), text(name.value)]))),
                     &text(", "),
                 ),
                 text("]"),

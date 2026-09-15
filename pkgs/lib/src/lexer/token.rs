@@ -1,11 +1,3 @@
-use miette::SourceSpan;
-
-#[derive(Debug, PartialEq, Eq)]
-pub struct Spanned<T> {
-    pub value: T,
-    pub span: SourceSpan,
-}
-
 #[allow(clippy::derive_partial_eq_without_eq)]
 #[derive(Debug, PartialEq)]
 pub enum Token<'a> {

@@ -191,7 +191,7 @@ fn evaluate_line(line: &str, scope: &mut Scope) -> Result<Option<Value>, InputEr
         return Err(InputError::MultipleStatements);
     }
 
-    let produces_value = !matches!(ast.statements[0], Statement::Let(_));
+    let produces_value = !matches!(ast.statements[0].value, Statement::Let(_));
     evaluate_ast(&ast, scope)
         .map(|value| produces_value.then_some(value))
         .map_err(InputError::Evaluation)
@@ -213,17 +213,28 @@ fn report(event: Event, line: &str) -> bool {
         }
         Event::Cleared | Event::NoOutput => {}
         Event::Exit => return true,
-        Event::Error(InputError::Parse(error)) => {
-            let source = NamedSource::new("<repl>", line.trim().to_owned());
-            eprintln!("{}", Report::new(error).with_source_code(source));
+        Event::Error(InputError::Parse(error)) => eprintln!("{}", render_diagnostic(error, line)),
+        Event::Error(InputError::Evaluation(error)) => {
+            eprintln!("{}", render_diagnostic(error, line));
         }
         Event::Error(InputError::MultipleStatements) => {
             eprintln!("error: the REPL accepts one statement per line");
         }
-        Event::Error(InputError::Evaluation(error)) => eprintln!("error: {error:?}"),
     }
 
     false
+}
+
+/// Renders `error` against `line`, as submitted at the prompt.
+///
+/// [`Report`] only renders its diagnostic through `Debug`; its `Display`
+/// implementation prints the bare message and hides the source span.
+fn render_diagnostic<E: miette::Diagnostic + Send + Sync + 'static>(
+    error: E,
+    line: &str,
+) -> String {
+    let source = NamedSource::new("<repl>", line.trim().to_owned());
+    format!("{:?}", Report::new(error).with_source_code(source))
 }
 
 /// Name shared by the command completion menu and the keybinding that opens it.
@@ -276,7 +287,21 @@ mod tests {
     use djson::eval::Value;
     use reedline::{Completer, CompletionResult};
 
-    use super::{Command, CommandCompleter, Event, InputError, Repl};
+    use super::{Command, CommandCompleter, Event, InputError, Repl, render_diagnostic};
+
+    #[test]
+    fn renders_evaluation_errors_against_the_submitted_line() {
+        let mut repl = Repl::new();
+
+        let Event::Error(InputError::Evaluation(error)) = repl.submit("1 / 0") else {
+            panic!("expected an evaluation error");
+        };
+        let rendered = render_diagnostic(error, "1 / 0");
+
+        assert!(rendered.contains("eval::division_by_zero"), "{rendered}");
+        assert!(rendered.contains("<repl>:1:1"), "{rendered}");
+        assert!(rendered.contains("this divisor is zero"), "{rendered}");
+    }
 
     #[test]
     fn every_accepted_spelling_is_handled() {
