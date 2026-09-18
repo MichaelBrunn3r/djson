@@ -8,5 +8,5 @@ profile bin:
 build-vscode-ext:
     cd pkgs/vscode-ext && deno task build && vsce package --no-dependencies
 
-init:
-    ./scripts/init.py
+init *args:
+    deno run --allow-read --allow-write scripts/init.ts {{args}}

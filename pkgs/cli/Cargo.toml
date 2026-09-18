@@ -13,7 +13,7 @@ fmt_json = ["dep:serde_json"]
 fmt_yaml = ["dep:serde_yaml"]
 
 [dependencies]
-clap = { version = "4.6.6", features = ["derive"] }
+clap = { workspace = true, features = ["derive"] }
 djson = { path = "../lib" }
 miette = { workspace = true }
 reedline = "0.51.0"

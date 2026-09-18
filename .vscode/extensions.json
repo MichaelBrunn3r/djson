@@ -1,7 +1,6 @@
 {
     "recommendations": [
         "denoland.vscode-deno",
-        "maptz.regionfolder",
-        "ms-python.python"
+        "maptz.regionfolder"
     ]
 }

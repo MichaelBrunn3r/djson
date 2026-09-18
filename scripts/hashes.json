@@ -1,0 +1,9 @@
+{
+  "pkgs/lib/benches/generated/exprs_1MB.dj": "384e1790b7ff4596b8926d81d2e20c68d532b2fe8147b759d764c795da6ace0a",
+  "pkgs/lib/benches/generated/float_exprs_1k.dj": "12f7bb921fac0528f2df20a8deb9fb97f0f89341985135cf645e1be400a34f5c",
+  "pkgs/lib/benches/generated/floats_1k.dj": "a708d15500a489d936c7e303e56e51aedb2d915c31757d67df0935f01dc5a8f1",
+  "pkgs/lib/benches/generated/int_exprs_1k.dj": "2056637469ed37823d3e68971b62e21b89b954e8656a602076ce7b4b70f64d56",
+  "pkgs/lib/benches/generated/ints_1k.dj": "2ecab2731e71ccd4b03fa5d74636522daecf46246ad115f541506bb480b19370",
+  "pkgs/lib/benches/generated/static_1MB.dj": "9f2d9cfa98ba7feae11232035bfcad4699355fbd107656cae7a498025b5a0ae4",
+  "pkgs/lib/benches/generated/strings_1k.dj": "ebfc3acaf0a98d15ec0cee3a10fca6be47fc891064ebc369ddd5529ecb00836e"
+}
