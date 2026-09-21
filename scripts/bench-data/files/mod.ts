@@ -1,40 +1,20 @@
 import type { ValueWriter } from "../value_writer.ts";
-import { recipe as exprsRecipe } from "./exprs_1MB.ts";
-import { recipe as floatExprsRecipe } from "./float_exprs_1k.ts";
-import { recipe as floatsRecipe } from "./floats_1k.ts";
-import { recipe as intExprsRecipe } from "./int_exprs_1k.ts";
-import { recipe as intsRecipe } from "./ints_1k.ts";
-import { recipe as staticRecipe } from "./static_1MB.ts";
-import { recipe as stringsRecipe } from "./strings_1k.ts";
+import { recipe as str_1k_recipe } from "./str_1k.ts";
+import { recipe as u64_mixed_1k_recipe } from "./u64_mixed_1k.ts";
+import { recipe as u64_short_1k_recipe } from "./u64_short_1k.ts";
 
 export const BENCHMARK_FILES: Readonly<Record<string, BenchmarkFile>> = {
-    static_1MB: {
-        path: "pkgs/lib/benches/generated/static_1MB.dj",
-        recipe: staticRecipe,
+    str_1k: {
+        path: "pkgs/lib/benches/res/str_1k.dj",
+        recipe: str_1k_recipe,
     },
-    exprs_1MB: {
-        path: "pkgs/lib/benches/generated/exprs_1MB.dj",
-        recipe: exprsRecipe,
+    u64_mixed_1k: {
+        path: "pkgs/lib/benches/res/u64_mixed_1k.dj",
+        recipe: u64_mixed_1k_recipe,
     },
-    ints_1k: {
-        path: "pkgs/lib/benches/generated/ints_1k.dj",
-        recipe: intsRecipe,
-    },
-    floats_1k: {
-        path: "pkgs/lib/benches/generated/floats_1k.dj",
-        recipe: floatsRecipe,
-    },
-    strings_1k: {
-        path: "pkgs/lib/benches/generated/strings_1k.dj",
-        recipe: stringsRecipe,
-    },
-    int_exprs_1k: {
-        path: "pkgs/lib/benches/generated/int_exprs_1k.dj",
-        recipe: intExprsRecipe,
-    },
-    float_exprs_1k: {
-        path: "pkgs/lib/benches/generated/float_exprs_1k.dj",
-        recipe: floatExprsRecipe,
+    u64_short_1k: {
+        path: "pkgs/lib/benches/res/u64_short_1k.dj",
+        recipe: u64_short_1k_recipe,
     },
 };
 

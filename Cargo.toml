@@ -1,13 +1,17 @@
 cargo-features = ["profile-rustflags"]
 
 [workspace]
-members = ["pkgs/lib", "pkgs/cli"]
+members = ["pkgs/lib"]
 resolver = "3"
 
 [workspace.dependencies]
+serde = "1.0.229"
+thiserror = "2.0.17"
 clap = { version = "4.6.7" }
 insta = "1.48.0"
 miette = { version = "7.6.0", features = ["fancy"] }
+criterion = "0.8.2"
+rand = "0.10.3"
 
 [workspace.lints.clippy]
 pedantic = { level = "deny", priority = -1 }

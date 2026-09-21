@@ -1,16 +1,13 @@
-import type { Range } from "./range.ts";
+import type { BigRange, Range } from "./range.ts";
 import type { WeightedChoices } from "./weighted_choices.ts";
 
 /** 2 ** -32, maps a u32 onto [0, 1). */
 const U32_SCALE = 2.3283064365386963e-10;
 
-/**
- * Helpers for drawing shaped values (ranges, elements, weighted choices) from
- * any `Prng`.
- *
- * Every draw is derived from a raw u32, so nothing here allocates. Each method
- * documents why it is written the way it is.
- */
+/** 2 ** 64, the width of the pool `intBig` draws from. */
+const BIGINT_POOL_SIZE = 1n << 64n;
+
+/** Helpers for drawing ranges, elements and weighted choices from any `Prng`. */
 export class Random {
   readonly #prng: RNG;
 
@@ -33,50 +30,46 @@ export class Random {
     return this.#prng.nextU32() * U32_SCALE;
   }
 
-  /**
-   * Uniform integer in `bounds`, inclusive of both ends.
-   *
-   * `(u * 2**-32 * size) | 0` beats the obvious alternatives: `prng_bench.ts`
-   * measured it ~20% faster than `Math.floor(u * 2**-32 * size)` and more than
-   * twice as fast as `u % size`, which is also biased towards low residues.
-   *
-   * Truncating is exact, not merely cheap, for every `size` up to
-   * `Number.MAX_SAFE_INTEGER`: the product stays below that bound, so no
-   * precision is lost, and both operands are non-negative, so `| 0` agrees
-   * with `Math.floor`.
-   */
+  /** Uniform integer in `[bounds.min, bounds.max]`. */
   int(bounds: Range): number {
-    return bounds.min + (this.#prng.nextU32() * (U32_SCALE * bounds.size) | 0);
+    const offset = bounds.size <= 0x80000000
+      ? (this.#prng.nextU32() * (U32_SCALE * bounds.size) | 0)
+      : Math.floor(
+        this.#prng.nextU32() * (U32_SCALE * bounds.size),
+      );
+    return bounds.min + offset;
   }
 
-  /**
-   * Uniform float in `bounds`, half-open at the top.
-   *
-   * Derived from the raw u32 rather than from `nextFloat`, so the whole scale
-   * `2**-32 * span` is one multiply instead of two.
-   */
+  /** Uniform integer in `[bounds.min, bounds.max]`. */
+  intBig(bounds: BigRange): bigint {
+    const span = bounds.size;
+    if (span > BIGINT_POOL_SIZE) {
+      throw new Error(
+        `bounds too wide to draw from one pool, got size: ${span}`,
+      );
+    }
+
+    const limit = BIGINT_POOL_SIZE - BIGINT_POOL_SIZE % span;
+    let drawn;
+    do {
+      drawn = (BigInt(this.#prng.nextU32()) << 32n) |
+        BigInt(this.#prng.nextU32());
+    } while (drawn >= limit);
+    return bounds.min + drawn % span;
+  }
+
+  /** Uniform float in `[bounds.min, bounds.max)`. */
   float(bounds: Range): number {
     return bounds.min +
       this.#prng.nextU32() * (U32_SCALE * (bounds.max - bounds.min));
   }
 
-  /**
-   * Uniformly picks one element of `items`.
-   *
-   * Indexes straight off the u32 instead of going through
-   * `int(range(0, items.length - 1))`, which would allocate a `Range` on every
-   * call.
-   */
+  /** Uniformly picks one element of `items`. */
   pick<T>(items: readonly T[]): T {
     return items[this.#prng.nextU32() * (U32_SCALE * items.length) | 0];
   }
 
-  /**
-   * Picks from `choices` using a uniform number in [0, 1).
-   *
-   * `WeightedChoices` walks cumulative probabilities, so it wants the fraction
-   * `nextFloat` already returns rather than a scaled index.
-   */
+  /** Picks from `choices` using a uniform number in `[0, 1)`. */
   choose<T>(choices: WeightedChoices<T>): T {
     return choices.choose(this.nextFloat());
   }

@@ -195,6 +195,11 @@ export class Writer {
     return this;
   }
 
+  /** Appends the decimal form of `value`. */
+  writeBigInt(value: bigint): this {
+    return this.writeAscii(value.toString());
+  }
+
   /** Ends the current line and indents the next one to the current level. */
   newline(): this {
     this.#lineWidth = 0;

@@ -30,3 +30,22 @@ export function range(min: number, max: number): Range {
 export function unbounded(min: number): Range {
   return new Range(min, Number.MAX_SAFE_INTEGER);
 }
+
+/** A range of bigints (slow) */
+export class BigRange {
+  readonly min: bigint;
+  readonly max: bigint;
+
+  constructor(min: bigint, max: bigint) {
+    this.min = min;
+    this.max = max;
+  }
+
+  get size(): bigint {
+    return this.max - this.min + 1n;
+  }
+}
+
+export function intRange(min: bigint, max: bigint): BigRange {
+  return new BigRange(min, max);
+}

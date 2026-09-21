@@ -1,7 +1,7 @@
 import { assert } from "jsr:@std/assert";
 import type { ValueWriterProvider } from "./provider.ts";
 import type { Random } from "./random.ts";
-import { type Range, range } from "./range.ts";
+import { type BigRange, type Range, range } from "./range.ts";
 import type { Writer } from "./writer.ts";
 
 const encoder = new TextEncoder();
@@ -14,8 +14,9 @@ const BYTE_OPEN_BRACKET = 0x5b; // "["
 const BYTE_CLOSE_BRACKET = 0x5d; // "]"
 const BYTE_OPEN_BRACE = 0x7b; // "{"
 const BYTE_CLOSE_BRACE = 0x7d; // "}"
-export const SINGLE_QUOTE = 0x27; // "'"
-export const DOUBLE_QUOTE = 0x22; // '"'
+export const BYTE_SINGLE_QUOTE = 0x27; // "'"
+export const BYTE_DOUBLE_QUOTE = 0x22; // '"'
+export const BYTE_UNDERSCORE = 0x5f; // "_"
 
 export const NO_DELIMITER = -1;
 
@@ -72,7 +73,13 @@ export function delimitedWriter(
   };
 }
 
-export function intWriter(bounds: Range): ValueWriter {
+export function intWriter(
+  bounds: Range,
+  {
+    separators = [],
+    separatorChance = 0.5,
+  }: { separators?: readonly number[]; separatorChance?: number } = {},
+): ValueWriter {
   return {
     write(
       rng: Random,
@@ -83,8 +90,31 @@ export function intWriter(bounds: Range): ValueWriter {
       const value = rng.int(bounds);
       const wrap = requireDelimited === true && value < 0;
       if (wrap) writer.writeByte(BYTE_OPEN_PAREN);
-      writer.writeInt(value);
+      if (
+        separators.length === 0 ||
+        rng.nextFloat() >= separatorChance
+      ) {
+        writer.writeInt(value);
+      } else {
+        const digits = Math.abs(value).toString();
+        const separator = rng.pick(separators);
+        if (value < 0) writer.writeByte(0x2d);
+        const firstGroupLength = digits.length % 3 || 3;
+        writer.writeAscii(digits.slice(0, firstGroupLength));
+        for (let i = firstGroupLength; i < digits.length; i += 3) {
+          writer.writeByte(separator);
+          writer.writeAscii(digits.slice(i, i + 3));
+        }
+      }
       if (wrap) writer.writeByte(BYTE_CLOSE_PAREN);
+    },
+  };
+}
+
+export function bigIntWriter(bounds: BigRange): ValueWriter {
+  return {
+    write(rng: Random, writer: Writer, _depthBudget: number): void {
+      writer.writeBigInt(rng.intBig(bounds));
     },
   };
 }

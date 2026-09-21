@@ -1,39 +1,13 @@
-#[must_use]
-pub fn dedent(input: &str) -> String {
-    let lines = input.lines().collect::<Vec<_>>();
-    let continuation_indent = lines
-        .iter()
-        .skip(1)
-        .filter(|line| !line.trim().is_empty())
-        .map(|line| line.len() - line.trim_start().len())
-        .min()
-        .unwrap_or(0);
+use crate::serde_de::from_bytes;
 
-    lines
-        .iter()
-        .enumerate()
-        .map(|(index, line)| {
-            if index == 0 {
-                (*line).to_owned()
-            } else {
-                line.get(continuation_indent..).unwrap_or("").to_owned()
-            }
-        })
-        .collect::<Vec<_>>()
-        .join("\n")
-}
-
-#[must_use]
-pub fn fmt_snapshot_case(label: &str, fields: &[(&str, &str)]) -> String {
-    let fields = fields
-        .iter()
-        .map(|(label, value)| {
-            let value = value.trim_end().replace('\n', "\n        ");
-            format!("{label}: `{value}`")
-        })
-        .collect::<Vec<_>>()
-        .join("\n");
-    format!("{label}\n{fields}")
+pub(crate) fn fmt_report(report: &miette::Report) -> String {
+    let handler =
+        miette::GraphicalReportHandler::new_themed(miette::GraphicalTheme::unicode_nocolor());
+    let mut rendered = String::new();
+    handler
+        .render_report(&mut rendered, report.as_ref())
+        .expect("writing into a `String` cannot fail");
+    rendered
 }
 
 #[must_use]
@@ -49,20 +23,42 @@ where
         .join("\n\n")
 }
 
-#[must_use]
-/// # Panics
-///
-/// Panics if miette cannot render the diagnostic report.
-pub fn fmt_diagnostic_case<E>(label: &str, input: &str, error: E) -> String
-where
-    E: miette::Diagnostic + Send + Sync + 'static,
-{
-    let handler = miette::GraphicalReportHandler::new_themed(miette::GraphicalTheme::none());
-    let report = miette::Report::new(error)
-        .with_source_code(miette::NamedSource::new("input.dj", input.to_owned()));
-    let mut rendered = String::new();
-    handler
-        .render_report(&mut rendered, report.as_ref())
-        .expect("rendering a diagnostic should succeed");
-    fmt_snapshot_case(label, &[("error", &rendered)])
+pub fn fmt_snapshot_case(label: &str, fields: &[(&str, &str)]) -> String {
+    let fields = fields
+        .iter()
+        .map(|(label, value)| {
+            let value = value.trim_end().replace('\n', "\n        ");
+            format!("{label}: `{value}`")
+        })
+        .collect::<Vec<_>>()
+        .join("\n");
+    format!("{label}\n{fields}")
 }
+
+/// Turns `(arg) -> Result<T, E>` into `(arg) -> Result<(), E>`.
+macro_rules! discard_ok {
+    ($fn:path) => {
+        |arg| $fn(arg).map(|_| ())
+    };
+}
+pub(crate) use discard_ok;
+
+//region assert_parses
+pub(crate) fn assert_parses<T>(src: &str, expected: T)
+where
+    T: serde::de::DeserializeOwned + PartialEq + std::fmt::Debug,
+{
+    let actual = from_bytes::<T>(src.as_bytes()).expect("parses");
+    assert_eq!(actual, expected, "parsing `{src}`");
+}
+
+/// Asserts that each case parses into its expected value.
+macro_rules! assert_parses_cases {
+    ($($source:literal => $expected:expr),* $(,)?) => {
+        $(
+            crate::test_utils::assert_parses($source, $expected);
+        )*
+    };
+}
+pub(crate) use assert_parses_cases;
+//endregion assert_parses
