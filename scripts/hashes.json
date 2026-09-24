@@ -1,5 +1,9 @@
 {
-  "pkgs/lib/benches/res/str_1k.dj": "484e234349a437a3369e55c80c5fdef9c784ffaf1a204486aac34087aac3b006",
+  "pkgs/lib/benches/res/str_escaped_1k.dj": "468c187ddc3c68a894657b495acf4fbd7316e7a16393ea36933841b0e02385b7",
+  "pkgs/lib/benches/res/str_mixed_1k.dj": "47d4dc782f3de190dd43e49b5fc2f251cafcc4e067c3fbbbbe5a9aef90e5760b",
+  "pkgs/lib/benches/res/str_short_1k.dj": "05f243fc13aca345a7be6f2dbcbd62c0f2f71e96b092a30c8fa15f439635981c",
+  "pkgs/lib/benches/res/str_utf16_escapes_1k.dj": "e8c9bd74761babc81052f5134b1be7a078b99c9a8344bd660b8a45d87b2c0a16",
   "pkgs/lib/benches/res/u64_mixed_1k.dj": "c6b09d11fd747f15e6001f26aab0a34aa67f7395dc7bacfd4341444adbbdb4a2",
-  "pkgs/lib/benches/res/u64_short_1k.dj": "6fe1fdb04b31f01a8b5f7be89a6eb30b5d498aa3b6535294725042d88b415e5e"
+  "pkgs/lib/benches/res/u64_short_1k.dj": "6fe1fdb04b31f01a8b5f7be89a6eb30b5d498aa3b6535294725042d88b415e5e",
+  "pkgs/lib/benches/res/utf16_escapes_1k.txt": "c9769c482157ebf9ed2f2b2f8c27416a5fa1f68334dae550c7cade2c8e7d916a"
 }

@@ -222,6 +222,60 @@ export function stringWriter(
   };
 }
 
+/** Picks one byte sequence to write. */
+export type SequencePicker = (rng: Random) => Uint8Array;
+
+/**
+ * Writes a sequence of bytes, picked from `inner` or by `pickSequence`.
+ *
+ * Each round picks from `pickSequence` with chance `sequenceChance` and
+ * `inner` otherwise. With `atLeastOne` the final round is forced to pick a
+ * sequence if none was picked before.
+ */
+export function alternationWriter(
+  inner: ValueWriter,
+  pickSequence: SequencePicker,
+  {
+    countBounds = range(1, 4),
+    sequenceChance = 0.5,
+    atLeastOne = false,
+  }: {
+    countBounds?: Range;
+    sequenceChance?: number;
+    /** `true` if at least one sequence must be written. */
+    atLeastOne?: boolean;
+  } = {},
+): ValueWriter {
+  assert(
+    sequenceChance >= 0 && sequenceChance <= 1,
+    `sequence chance must be in [0, 1], got: ${sequenceChance}`,
+  );
+
+  return {
+    write(
+      rng: Random,
+      writer: Writer,
+      depthBudget: number,
+      requireDelimited?: boolean,
+      localId?: number,
+    ): void {
+      const count = rng.int(countBounds);
+      let sequencesWritten = 0;
+      for (let round = 0; round < count; round++) {
+        const last = round === count - 1;
+        const mustSequence = atLeastOne && sequencesWritten === 0 && last;
+
+        if (mustSequence || rng.nextFloat() < sequenceChance) {
+          writer.writeBytes(pickSequence(rng));
+          sequencesWritten++;
+        } else {
+          inner.write(rng, writer, depthBudget, requireDelimited, localId);
+        }
+      }
+    },
+  };
+}
+
 /** Writes a run of words sampled from the pre-encoded `words`. */
 export function randomWordWriter(
   words: readonly Uint8Array[],

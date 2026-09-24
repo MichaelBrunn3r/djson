@@ -4,11 +4,19 @@ version = "0.1.0"
 edition = "2024"
 
 [[bench]]
-name = "parse_res"
+name = "parse_uint"
 harness = false
 
 [[bench]]
-name = "parse_uints"
+name = "parse_str"
+harness = false
+
+[[bench]]
+name = "cmp_parse_uint"
+harness = false
+
+[[bench]]
+name = "cmp_parse_utf16_escapes"
 harness = false
 
 [features]

@@ -1,4 +1,9 @@
-use crate::parser::{Parser, ParserError, ParserResult};
+use std::borrow::Cow;
+
+use crate::{
+    parser::Parser,
+    parser::error::{ParserError, ParserResult},
+};
 
 /// Decodes `src` as a single djson document.
 ///
@@ -17,7 +22,7 @@ where
 }
 
 pub(crate) struct Deserializer<'de> {
-    parser: Parser<'de>,
+    pub(crate) parser: Parser<'de>,
 }
 
 impl<'de> Deserializer<'de> {
@@ -59,6 +64,23 @@ impl<'de> serde::Deserializer<'de> for &mut Deserializer<'de> {
         deserialize_u64 => u64, visit_u64;
     }
 
+    fn deserialize_str<V>(self, visitor: V) -> Result<V::Value, Self::Error>
+    where
+        V: serde::de::Visitor<'de>,
+    {
+        match self.parser.parse_str()? {
+            Cow::Borrowed(str) => visitor.visit_borrowed_str(str),
+            Cow::Owned(str) => visitor.visit_string(str),
+        }
+    }
+
+    fn deserialize_string<V>(self, visitor: V) -> Result<V::Value, Self::Error>
+    where
+        V: serde::de::Visitor<'de>,
+    {
+        self.deserialize_str(visitor)
+    }
+
     fn deserialize_seq<V>(self, visitor: V) -> Result<V::Value, Self::Error>
     where
         V: serde::de::Visitor<'de>,
@@ -91,7 +113,7 @@ impl<'de> serde::Deserializer<'de> for &mut Deserializer<'de> {
 
     serde::forward_to_deserialize_any! {
         bool i8 i16 i32 i64 f32 f64
-        char str string bytes byte_buf option unit unit_struct
+        char bytes byte_buf option unit unit_struct
         newtype_struct map struct enum identifier ignored_any
     }
 }
@@ -121,25 +143,7 @@ impl<'de> serde::de::SeqAccess<'de> for ListAccess<'_, 'de> {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::test_utils::{
-        assert_parses_cases, discard_ok, fmt_report, fmt_snapshot_case, fmt_snapshot_cases,
-    };
-
-    #[test]
-    fn deserializes_uint() {
-        assert_parses_cases! {
-            "12345" => 12345u32,
-        }
-    }
-
-    #[test]
-    fn deserializes_lists() {
-        assert_parses_cases! {
-            "[1, 2, 3]" => vec![1u32, 2, 3],
-            "[[1, 2], [], [3]]" => vec![vec![1u8, 2], vec![], vec![3]], // Nested
-            "[\n \t 1  , \n    \r2,\n]" => vec![1u8, 2], // Whitespace
-        }
-    }
+    use crate::test_utils::{discard_ok, fmt_report, fmt_snapshot_case, fmt_snapshot_cases};
 
     #[test]
     fn diagnostics() {

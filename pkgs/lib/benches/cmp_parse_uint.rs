@@ -1,4 +1,4 @@
-//! Compares djson int parsing against other impls
+//! Compares djson uint parsing against other impls
 
 use std::hint::black_box;
 

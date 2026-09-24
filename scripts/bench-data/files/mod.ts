@@ -1,13 +1,32 @@
 import type { ValueWriter } from "../value_writer.ts";
-import { recipe as str_1k_recipe } from "./str_1k.ts";
+import { recipe as str_short_1k_recipe } from "./str_short_1k.ts";
+import { recipe as str_mixed_1k_recipe } from "./str_mixed_1k.ts";
+import { recipe as str_escaped_1k_recipe } from "./str_escaped_1k.ts";
+import { recipe as str_utf16_escapes_1k_recipe } from "./str_utf16_escapes_1k.ts";
 import { recipe as u64_mixed_1k_recipe } from "./u64_mixed_1k.ts";
 import { recipe as u64_short_1k_recipe } from "./u64_short_1k.ts";
+import { recipe as utf16_escapes_1k_recipe } from "./utf16_escapes_1k.ts";
 
 export const BENCHMARK_FILES: Readonly<Record<string, BenchmarkFile>> = {
-    str_1k: {
-        path: "pkgs/lib/benches/res/str_1k.dj",
-        recipe: str_1k_recipe,
+    // region String
+    str_short_1k: {
+        path: "pkgs/lib/benches/res/str_short_1k.dj",
+        recipe: str_short_1k_recipe,
     },
+    str_escaped_1k: {
+        path: "pkgs/lib/benches/res/str_escaped_1k.dj",
+        recipe: str_escaped_1k_recipe,
+    },
+    str_mixed_1k: {
+        path: "pkgs/lib/benches/res/str_mixed_1k.dj",
+        recipe: str_mixed_1k_recipe,
+    },
+    str_unicode_1k: {
+        path: "pkgs/lib/benches/res/str_utf16_escapes_1k.dj",
+        recipe: str_utf16_escapes_1k_recipe,
+    },
+    // endregion String
+    // region uint
     u64_mixed_1k: {
         path: "pkgs/lib/benches/res/u64_mixed_1k.dj",
         recipe: u64_mixed_1k_recipe,
@@ -15,6 +34,11 @@ export const BENCHMARK_FILES: Readonly<Record<string, BenchmarkFile>> = {
     u64_short_1k: {
         path: "pkgs/lib/benches/res/u64_short_1k.dj",
         recipe: u64_short_1k_recipe,
+    },
+    // endregion uint
+    utf16_escapes_1k: {
+        path: "pkgs/lib/benches/res/utf16_escapes_1k.txt",
+        recipe: utf16_escapes_1k_recipe,
     },
 };
 
