@@ -4,6 +4,8 @@ pub(crate) mod error;
 mod parse_str;
 mod parse_utf16_escape;
 
+pub(crate) use parse_str::ParsedStr;
+
 pub(crate) struct Parser<'src> {
     pub(crate) src: &'src [u8],
     pub(crate) pos: usize,

@@ -1,8 +1,11 @@
-use std::borrow::Cow;
-
 use super::Parser;
 use super::error::{ParserError, ParserResult};
 use crate::utils::U8Ext;
+
+pub(crate) enum ParsedStr<'src, 'scratch> {
+    Borrowed(&'src str),
+    Scratch(&'scratch str),
+}
 
 impl<'src> Parser<'src> {
     /// Parses a string.
@@ -28,7 +31,9 @@ impl<'src> Parser<'src> {
     /// - String contains invalid utf8
     /// - String contains an invalid UTF-16 escape
     #[inline]
-    pub(crate) fn parse_str(&mut self) -> ParserResult<Cow<'src, str>> {
+    pub(crate) fn parse_str<'scratch>(
+        &'scratch mut self,
+    ) -> ParserResult<ParsedStr<'src, 'scratch>> {
         let src = self.src;
         self.expect(b'"', "`\"`")?;
         let content_start = self.pos;
@@ -44,12 +49,12 @@ impl<'src> Parser<'src> {
                 if chunk_is_ascii {
                     self.pos = content_end + '"'.len_utf8();
                     // SAFETY: String is entirely ascii -> valid utf8
-                    return Ok(Cow::Borrowed(unsafe {
+                    return Ok(ParsedStr::Borrowed(unsafe {
                         std::str::from_utf8_unchecked(&src[content_start..content_end])
                     }));
                 } else {
                     self.pos = content_end + '"'.len_utf8();
-                    Ok(Cow::Borrowed(Self::decode_utf8(
+                    Ok(ParsedStr::Borrowed(Self::decode_utf8(
                         &src[content_start..content_end],
                         content_start,
                     )?))
@@ -74,12 +79,12 @@ impl<'src> Parser<'src> {
     ///
     /// # Contract
     /// Post: `self.pos` is after the closing `"`
-    fn parse_escape_chunks(
-        &mut self,
+    fn parse_escape_chunks<'scratch>(
+        &'scratch mut self,
         content_start: usize,
         pos_backslash: usize,
         first_chunk_is_ascii: bool,
-    ) -> ParserResult<Cow<'src, str>> {
+    ) -> ParserResult<ParsedStr<'src, 'scratch>> {
         self.scratch.clear();
 
         let mut chunk_start = content_start;
@@ -119,7 +124,7 @@ impl<'src> Parser<'src> {
                         chunk_start,
                     )?;
                     self.pos = chunk_end + '"'.len_utf8();
-                    return Ok(Cow::Owned(String::from(self.scratch.as_str())));
+                    return Ok(ParsedStr::Scratch(self.scratch.as_str()));
                 }
                 byte => {
                     return Err(ParserError::ControlCharacter {

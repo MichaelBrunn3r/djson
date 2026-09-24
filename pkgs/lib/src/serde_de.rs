@@ -1,6 +1,7 @@
-use std::borrow::Cow;
-
-use crate::{parser::Parser, parser::error::ParserError};
+use crate::{
+    parser::{ParsedStr, Parser},
+    parser::error::ParserError,
+};
 
 pub struct Deserializer<'de> {
     pub(crate) parser: Parser<'de>,
@@ -52,8 +53,8 @@ impl<'de> serde::Deserializer<'de> for &mut Deserializer<'de> {
         V: serde::de::Visitor<'de>,
     {
         match self.parser.parse_str()? {
-            Cow::Borrowed(str) => visitor.visit_borrowed_str(str),
-            Cow::Owned(str) => visitor.visit_string(str),
+            ParsedStr::Borrowed(str) => visitor.visit_borrowed_str(str),
+            ParsedStr::Scratch(str) => visitor.visit_str(str),
         }
     }
 

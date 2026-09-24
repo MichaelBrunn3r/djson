@@ -41,7 +41,7 @@ fn parse_str(c: &mut Criterion) {
             //     });
             // });
 
-            group.bench_with_input(BenchmarkId::new("owned", name), &src, |benchmark, src| {
+            group.bench_with_input(BenchmarkId::new("arena", name), &src, |benchmark, src| {
                 benchmark.iter(|| {
                     let arena = Bump::new();
                     let mut deserializer = Deserializer::new(black_box(src));
