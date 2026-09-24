@@ -1,32 +1,15 @@
 use std::borrow::Cow;
 
-use crate::{
-    parser::Parser,
-    parser::error::{ParserError, ParserResult},
-};
+use crate::{parser::Parser, parser::error::ParserError};
 
-/// Decodes `src` as a single djson document.
-///
-/// # Errors
-///
-/// Returns a [`ParserError`] if `src` is not a well-formed document or does not
-/// describe a `T`.
-#[must_use]
-pub fn from_bytes<'src, T>(src: &'src [u8]) -> ParserResult<T>
-where
-    T: serde::Deserialize<'src>,
-{
-    let mut deserializer = Deserializer::new(src);
-    let value = T::deserialize(&mut deserializer)?;
-    Ok(value)
-}
-
-pub(crate) struct Deserializer<'de> {
+pub struct Deserializer<'de> {
     pub(crate) parser: Parser<'de>,
 }
 
 impl<'de> Deserializer<'de> {
-    pub(crate) fn new(src: &'de [u8]) -> Self {
+    /// Creates a deserializer for `src`.
+    #[must_use]
+    pub fn new(src: &'de [u8]) -> Self {
         Self {
             parser: Parser::new(src),
         }
@@ -142,8 +125,14 @@ impl<'de> serde::de::SeqAccess<'de> for ListAccess<'_, 'de> {
 
 #[cfg(test)]
 mod tests {
+    use bumpalo::Bump;
+    use serde::de::DeserializeSeed;
+
     use super::*;
-    use crate::test_utils::{discard_ok, fmt_report, fmt_snapshot_case, fmt_snapshot_cases};
+    use crate::{
+        ParserResult, from_bytes,
+        test_utils::{ArenaString, discard_ok, fmt_report, fmt_snapshot_case, fmt_snapshot_cases},
+    };
 
     #[test]
     fn diagnostics() {
@@ -169,5 +158,19 @@ mod tests {
             fmt_snapshot_case(label, &[("error", &fmt_report(&report))])
         });
         insta::assert_snapshot!(snap);
+    }
+
+    #[test]
+    fn deserializes_with_seed() {
+        let arena = Bump::new();
+        assert_eq!(arena.allocated_bytes(), 0);
+
+        let mut deserializer = Deserializer::new(br#""hello\nworld""#);
+        let value: &str = ArenaString { arena: &arena }
+            .deserialize(&mut deserializer)
+            .expect("seed deserializes");
+
+        assert_eq!(value, "hello\nworld");
+        assert!(arena.allocated_bytes() > 0);
     }
 }

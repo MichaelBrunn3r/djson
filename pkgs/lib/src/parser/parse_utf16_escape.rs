@@ -115,11 +115,12 @@ const HEX_LUT: [u32; 256] = {
 #[cfg(test)]
 mod tests {
     use crate::{
+        from_bytes,
         parser::{
             Parser,
             error::{ParserErrorKind, ParserResult},
         },
-        serde_de::{Deserializer, from_bytes},
+        serde_de::Deserializer,
     };
 
     #[test]

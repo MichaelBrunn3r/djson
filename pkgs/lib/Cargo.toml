@@ -30,8 +30,10 @@ miette = {workspace = true}
 
 [dev-dependencies]
 criterion = {workspace = true}
+bumpalo = {workspace = true}
 insta = {workspace = true}
 rand = {workspace = true}
+serde_state = {workspace = true}
 
 [lints]
 workspace = true

@@ -1,7 +1,7 @@
-use crate::{
-    parser::Parser,
-    serde_de::{Deserializer, from_bytes},
-};
+use bumpalo::Bump;
+use serde::de::{DeserializeSeed, Deserializer as SerdeDeserializer, Visitor};
+
+use crate::{from_bytes, parser::Parser};
 
 pub(crate) fn fmt_report(report: &miette::Report) -> String {
     let handler =
@@ -79,3 +79,53 @@ impl<'src> ParserExt for Parser<'src> {
     }
 }
 //endregion ParserExt
+
+//region Deserialize with seed
+pub(crate) struct ArenaString<'arena> {
+    pub(crate) arena: &'arena Bump,
+}
+
+impl<'de, 'arena> DeserializeSeed<'de> for ArenaString<'arena> {
+    type Value = &'arena str;
+
+    fn deserialize<D>(self, deserializer: D) -> Result<Self::Value, D::Error>
+    where
+        D: SerdeDeserializer<'de>,
+    {
+        deserializer.deserialize_str(ArenaStringVisitor { arena: self.arena })
+    }
+}
+
+struct ArenaStringVisitor<'arena> {
+    arena: &'arena Bump,
+}
+
+impl<'de, 'arena> Visitor<'de> for ArenaStringVisitor<'arena> {
+    type Value = &'arena str;
+
+    fn expecting(&self, formatter: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        formatter.write_str("a string")
+    }
+
+    fn visit_borrowed_str<E>(self, value: &'de str) -> Result<Self::Value, E>
+    where
+        E: serde::de::Error,
+    {
+        Ok(self.arena.alloc_str(value))
+    }
+
+    fn visit_str<E>(self, value: &str) -> Result<Self::Value, E>
+    where
+        E: serde::de::Error,
+    {
+        Ok(self.arena.alloc_str(value))
+    }
+
+    fn visit_string<E>(self, value: String) -> Result<Self::Value, E>
+    where
+        E: serde::de::Error,
+    {
+        Ok(self.arena.alloc_str(&value))
+    }
+}
+//endregion Deserialize with seed

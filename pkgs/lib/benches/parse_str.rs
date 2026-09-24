@@ -2,8 +2,11 @@
 
 use std::hint::black_box;
 
+use bumpalo::{Bump, collections::Vec as ArenaVec};
 use criterion::{BenchmarkId, Criterion, criterion_group, criterion_main};
-use djson::from_bytes;
+use djson::{Deserializer, from_bytes};
+use serde::de::DeserializeSeed;
+use serde_state::de::SeqSeed;
 
 mod common;
 
@@ -31,10 +34,26 @@ fn parse_str(c: &mut Criterion) {
                 },
             );
         } else {
+            // group.bench_with_input(BenchmarkId::new("owned", name), &src, |benchmark, src| {
+            //     benchmark.iter(|| {
+            //         let values: Vec<String> = from_bytes(black_box(src)).expect("document parses");
+            //         black_box(values)
+            //     });
+            // });
+
             group.bench_with_input(BenchmarkId::new("owned", name), &src, |benchmark, src| {
                 benchmark.iter(|| {
-                    let values: Vec<String> = from_bytes(black_box(src)).expect("document parses");
-                    black_box(values)
+                    let arena = Bump::new();
+                    let mut deserializer = Deserializer::new(black_box(src));
+                    let values: ArenaVec<'_, &str> =
+                        SeqSeed::new(common::ArenaString { arena: &arena }, |capacity| {
+                            let mut values = ArenaVec::new_in(&arena);
+                            values.reserve(capacity);
+                            values
+                        })
+                        .deserialize(&mut deserializer)
+                        .expect("document parses");
+                    black_box(values.len());
                 });
             });
         }
