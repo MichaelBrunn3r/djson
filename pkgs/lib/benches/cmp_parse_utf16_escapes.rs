@@ -4,12 +4,12 @@ use std::hint::black_box;
 
 use criterion::{Criterion, criterion_group, criterion_main};
 
-mod common;
+mod utils;
 
 fn compare_parse_hex4(c: &mut Criterion) {
     let mut group = c.benchmark_group("parse_hex4");
 
-    let src = common::read_bench_resource("utf16_escapes_1k.txt");
+    let src = utils::read_bench_resource("utf16_escapes_1k.txt");
     let src = src.strip_suffix(b"\n").unwrap_or(&src); // the generator added a \n
     let num_escapes = src.len() / "\\uXXXX".len();
 

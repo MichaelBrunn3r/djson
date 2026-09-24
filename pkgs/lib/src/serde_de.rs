@@ -131,7 +131,7 @@ mod tests {
     use super::*;
     use crate::{
         ParserResult, from_bytes,
-        test_utils::{ArenaString, discard_ok, fmt_report, fmt_snapshot_case, fmt_snapshot_cases},
+        utils::test::{ArenaString, discard_ok, fmt_report, fmt_snapshot_case, fmt_snapshot_cases},
     };
 
     #[test]

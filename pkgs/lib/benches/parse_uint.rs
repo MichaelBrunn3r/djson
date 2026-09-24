@@ -3,11 +3,11 @@ use std::hint::black_box;
 use criterion::{Criterion, criterion_group, criterion_main};
 use djson::from_bytes;
 
-mod common;
+mod utils;
 
 fn parse_u64(c: &mut Criterion) {
     for name in ["u64_short_1k", "u64_mixed_1k"] {
-        let src = common::read_bench_resource(&format!("{name}.dj"));
+        let src = utils::read_bench_resource(&format!("{name}.dj"));
 
         c.bench_function(name, |benchmark| {
             benchmark.iter(|| {

@@ -190,7 +190,7 @@ impl<'src> Parser<'src> {
 mod tests {
     use super::*;
     use crate::{
-        from_bytes, parser::error::ParserErrorKind, test_utils::assert_deserializes_cases,
+        from_bytes, parser::error::ParserErrorKind, utils::test::assert_deserializes_cases,
     };
 
     #[test]

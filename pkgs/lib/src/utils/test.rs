@@ -59,7 +59,7 @@ where
 macro_rules! assert_deserializes_cases {
     ($($source:literal => $expected:expr),* $(,)?) => {
         $(
-            crate::test_utils::assert_deserializes($source, $expected);
+            crate::utils::test::assert_deserializes($source, $expected);
         )*
     };
 }

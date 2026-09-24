@@ -18,7 +18,7 @@ impl<'src> Parser<'src> {
     /// escape           = utf16_code_point | '\' ( '"' | '\' | '/' | 'b' | 'f' | 'n' | 'r' | 't')
     /// utf16_code_point = utf16_code_unit | utf16_code_unit utf16_code_unit
     /// utf16_code_unit  = '\' 'u' hex hex hex hex
-    /// hex              = '0'-'9' | 'a'-'f' | 'A'-'F'
+    /// hex              = 0-9a-fA-F
     /// ```
     ///
     /// ## Returns
