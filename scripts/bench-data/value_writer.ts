@@ -470,3 +470,48 @@ export function mapWriter(
     },
   };
 }
+
+const PATTERN_RUST_IDENTIFIER = /^[A-Za-z_][A-Za-z0-9_]*$/;
+
+/** Writes a map that holds exactly `fields`, in a shuffled order. */
+export function structWriter(
+  fields: Readonly<Record<string, ValueWriter>>,
+): ValueWriter {
+  const members = Object.entries(fields).map(([name, value]) => {
+    assert(
+      PATTERN_RUST_IDENTIFIER.test(name),
+      `struct field name must be a Rust identifier, got: ${name}`,
+    );
+    return { name: encoder.encode(`"${name}": `), value };
+  });
+
+  assert(members.length > 0, "a struct needs at least one field");
+
+  // Write order of the members, reshuffled in place for every value.
+  const order = members.map((_, index) => index);
+
+  return {
+    write(rng: Random, writer: Writer, depthBudget: number): void {
+      // Fisher-Yates, back to front.
+      for (let i = order.length - 1; i > 0; i--) {
+        const j = rng.int(range(0, i));
+        const swap = order[i];
+        order[i] = order[j];
+        order[j] = swap;
+      }
+
+      writer.writeByte(BYTE_OPEN_BRACE);
+      writer.indent();
+      for (let i = 0; i < order.length; i++) {
+        if (i > 0) writer.writeByte(BYTE_COMMA);
+        writer.newline();
+        const member = members[order[i]];
+        writer.writeBytes(member.name);
+        member.value.write(rng, writer, depthBudget);
+      }
+      writer.dedent();
+      writer.newline();
+      writer.writeByte(BYTE_CLOSE_BRACE);
+    },
+  };
+}

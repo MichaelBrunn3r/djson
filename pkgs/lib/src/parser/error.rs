@@ -45,6 +45,12 @@ pub enum ParserError {
         #[label("not valid UTF-8")]
         pos: usize,
     },
+    #[error("unknown identifier `{found}`")]
+    InvalidIdentifier {
+        #[label("not one of the expected identifiers")]
+        pos: usize,
+        found: String,
+    },
     #[cfg(feature = "serde")]
     #[error("{msg}")]
     Custom { msg: String },
@@ -73,6 +79,7 @@ pub(crate) enum ParserErrorKind {
     InvalidUtf16,
     ControlCharacter,
     InvalidUtf8,
+    InvalidIdentifier,
     Custom,
 }
 
@@ -88,6 +95,7 @@ impl ParserError {
             ParserError::InvalidUtf16 { .. } => ParserErrorKind::InvalidUtf16,
             ParserError::ControlCharacter { .. } => ParserErrorKind::ControlCharacter,
             ParserError::InvalidUtf8 { .. } => ParserErrorKind::InvalidUtf8,
+            ParserError::InvalidIdentifier { .. } => ParserErrorKind::InvalidIdentifier,
             ParserError::Custom { .. } => ParserErrorKind::Custom,
         }
     }

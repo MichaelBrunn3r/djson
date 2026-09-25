@@ -14,10 +14,10 @@ fn parse_str(c: &mut Criterion) {
     let mut group = c.benchmark_group("parse_str");
 
     for (name, can_borrow) in [
-        ("str_short_1k", true),
-        ("str_escaped_1k", false),
-        ("str_utf16_escapes_1k", false),
-        ("str_mixed_1k", false),
+        ("str_short_5k", true),
+        ("str_escaped_5k", false),
+        ("str_utf16_escapes_5k", false),
+        ("str_mixed_5k", false),
     ] {
         let src = utils::read_bench_resource(&format!("{name}.dj"));
 

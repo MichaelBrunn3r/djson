@@ -1,4 +1,5 @@
 //! Helpers shared by the benchmark binaries.
+#![allow(dead_code)]
 
 use std::{fs, path::PathBuf};
 

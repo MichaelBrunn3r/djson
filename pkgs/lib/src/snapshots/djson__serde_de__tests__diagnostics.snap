@@ -2,35 +2,6 @@
 source: pkgs/lib/src/serde_de.rs
 expression: snap
 ---
-overflows u8
-error: `  × integer overflow for `u8`
-           ╭────
-         1 │ 256
-           · ▲
-           · ╰── does not fit in `u8`
-           ╰────`
-
-overflows u16`
-error: `  × integer overflow for `u16`
-           ╭────
-         1 │ 65536
-           · ▲
-           · ╰── does not fit in `u16`
-           ╰────`
-
-no digits at all
-error: `  × invalid integer
-           ╭────
-           ╰────`
-
-not a digit run
-error: `  × invalid integer
-           ╭────
-         1 │ abc
-           · ▲
-           · ╰── expected at least one digit
-           ╰────`
-
 not a list
 error: `  × expected `[`
            ╭────

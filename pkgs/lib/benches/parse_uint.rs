@@ -6,7 +6,7 @@ use djson::from_bytes;
 mod utils;
 
 fn parse_u64(c: &mut Criterion) {
-    for name in ["u64_short_1k", "u64_mixed_1k"] {
+    for name in ["u64_short_5k", "u64_mixed_5k"] {
         let src = utils::read_bench_resource(&format!("{name}.dj"));
 
         c.bench_function(name, |benchmark| {

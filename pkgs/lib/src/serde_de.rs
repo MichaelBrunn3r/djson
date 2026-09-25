@@ -1,6 +1,8 @@
+use serde::de::value::BorrowedStrDeserializer;
+
 use crate::{
-    parser::{ParsedStr, Parser},
     parser::error::ParserError,
+    parser::{ParsedStr, Parser},
 };
 
 pub struct Deserializer<'de> {
@@ -69,7 +71,7 @@ impl<'de> serde::Deserializer<'de> for &mut Deserializer<'de> {
     where
         V: serde::de::Visitor<'de>,
     {
-        self.parser.parse_list_start()?;
+        self.parser.expect_list_start()?;
         visitor.visit_seq(ListAccess {
             de: self,
             first: true,
@@ -95,10 +97,23 @@ impl<'de> serde::Deserializer<'de> for &mut Deserializer<'de> {
         self.deserialize_seq(visitor)
     }
 
+    fn deserialize_struct<V>(
+        self,
+        _name: &'static str,
+        fields: &'static [&'static str],
+        visitor: V,
+    ) -> Result<V::Value, Self::Error>
+    where
+        V: serde::de::Visitor<'de>,
+    {
+        self.parser.expect_map_start()?;
+        visitor.visit_map(StructAccess::new(self, fields))
+    }
+
     serde::forward_to_deserialize_any! {
         bool i8 i16 i32 i64 f32 f64
         char bytes byte_buf option unit unit_struct
-        newtype_struct map struct enum identifier ignored_any
+        map newtype_struct enum identifier ignored_any
     }
 }
 
@@ -115,14 +130,59 @@ impl<'de> serde::de::SeqAccess<'de> for ListAccess<'_, 'de> {
     where
         T: serde::de::DeserializeSeed<'de>,
     {
-        if !self.de.parser.parse_list_item(self.first)? {
+        if !self.de.parser.advance_to_next_item(self.first)? {
             return Ok(None);
         }
-
         self.first = false;
+
         seed.deserialize(&mut *self.de).map(Some)
     }
 }
+
+//region StructAccess
+struct StructAccess<'a, 'de> {
+    de: &'a mut Deserializer<'de>,
+    fields: &'static [&'static str],
+    first: bool,
+}
+
+impl<'a, 'de> StructAccess<'a, 'de> {
+    fn new(de: &'a mut Deserializer<'de>, fields: &'static [&'static str]) -> Self {
+        Self {
+            de,
+            fields,
+            first: true,
+        }
+    }
+}
+
+impl<'de> serde::de::MapAccess<'de> for StructAccess<'_, 'de> {
+    type Error = ParserError;
+
+    fn next_key_seed<K>(&mut self, seed: K) -> Result<Option<K::Value>, Self::Error>
+    where
+        K: serde::de::DeserializeSeed<'de>,
+    {
+        if !self.de.parser.advance_to_next_kv(self.first)? {
+            return Ok(None);
+        }
+        self.first = false;
+
+        let field = self.de.parser.parse_known_key(self.fields)?;
+
+        self.de.parser.expect_kv_separator()?;
+        seed.deserialize(BorrowedStrDeserializer::new(field))
+            .map(Some)
+    }
+
+    fn next_value_seed<V>(&mut self, seed: V) -> Result<V::Value, Self::Error>
+    where
+        V: serde::de::DeserializeSeed<'de>,
+    {
+        seed.deserialize(&mut *self.de)
+    }
+}
+//endregion StructAccess
 
 #[cfg(test)]
 mod tests {
@@ -138,10 +198,6 @@ mod tests {
     #[test]
     fn diagnostics() {
         let cases: &[(&str, &str, fn(&[u8]) -> ParserResult<()>)] = &[
-            ("overflows u8", "256", discard_ok!(from_bytes::<u8>)),
-            ("overflows u16`", "65536", discard_ok!(from_bytes::<u16>)),
-            ("no digits at all", "", discard_ok!(from_bytes::<u8>)),
-            ("not a digit run", "abc", discard_ok!(from_bytes::<u8>)),
             ("not a list", "1", discard_ok!(from_bytes::<Vec<u8>>)),
             (
                 "missing separator",

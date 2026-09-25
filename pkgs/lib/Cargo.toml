@@ -12,6 +12,10 @@ name = "parse_str"
 harness = false
 
 [[bench]]
+name = "parse_struct"
+harness = false
+
+[[bench]]
 name = "cmp_parse_uint"
 harness = false
 
@@ -34,6 +38,7 @@ bumpalo = {workspace = true}
 insta = {workspace = true}
 rand = {workspace = true}
 serde_state = {workspace = true}
+serde_derive = {workspace = true}
 
 [lints]
 workspace = true

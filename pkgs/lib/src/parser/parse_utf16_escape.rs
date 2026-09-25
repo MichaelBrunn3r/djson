@@ -39,7 +39,7 @@ impl<'src> Parser<'src> {
         }
 
         // `unit` must be a high surrogate followed by the `\u` of the low surrogate
-        if !(high < SURROGATE_SIZE && self.expect_next_bytes(b"\\u")) {
+        if !(high < SURROGATE_SIZE && self.eat_bytes(b"\\u")) {
             return Err(ParserError::InvalidUtf16 {
                 pos: start,
                 msg: "a low surrogate must follow a high surrogate",
