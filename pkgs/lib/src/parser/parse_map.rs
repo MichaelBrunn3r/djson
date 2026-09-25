@@ -12,33 +12,8 @@ impl<'src> Parser<'src> {
     }
 
     /// Consumes the end of a map.
-    fn eat_map_end(&mut self) -> bool {
+    pub(crate) fn eat_map_end(&mut self) -> bool {
         self.eat(b'}')
-    }
-
-    /// Advances to the next key-value pair of a map
-    pub(crate) fn advance_to_next_kv(&mut self, is_first: bool) -> ParserResult<bool> {
-        self.skip_whitespace();
-        if !is_first {
-            if self.eat_map_end() {
-                return Ok(false);
-            }
-            self.expect(b',', "`,` or `}`")?;
-            self.skip_whitespace();
-        }
-
-        if self.eat_map_end() {
-            return Ok(false);
-        }
-
-        if self.peek().is_none() {
-            return Err(ParserError::Expected {
-                pos: self.pos,
-                expected: "`}`",
-            });
-        }
-
-        Ok(true)
     }
 
     /// Consumes the separator between a key-value pair.
@@ -54,7 +29,6 @@ impl<'src> Parser<'src> {
         &mut self,
         identifiers: &'static [&'static str],
     ) -> ParserResult<&'static str> {
-        self.skip_whitespace();
         self.expect(b'"', "`\"`")?;
 
         // Get the key
@@ -86,28 +60,82 @@ impl<'src> Parser<'src> {
 
 #[cfg(test)]
 mod test {
-    use crate::from_bytes;
+    use crate::{
+        from_bytes, parser::error::ParserErrorKind, utils::test::assert_deserializes_cases,
+    };
 
-    #[derive(Debug, serde_derive::Deserialize, PartialEq)]
-    struct TestStruct {
-        key: u32,
+    #[test]
+    fn deserializes() {
+        assert_deserializes_cases! {
+            "{}" => partial(None, None),
+            // r#"{"a": 1}"# => partial(Some(1), None), // TODO options not working
+            // r#"{"b": 1}"# => partial(None, Some(1)),
+            r#"{"a": [1,2,3], "b": {"a": 1, "b": "hi", "c": 3}}"# => nested(vec![1,2,3], three(1,"hi", 3)), // Nested
+
+            // Entry separators
+            r#"{"a": 1,"b": "hi","c": 3}"# => three(1, "hi", 3),
+            r#"{"a": 1 "b": "hi" "c": 3}"# => three(1, "hi", 3),
+            "{\"a\": 1\n\"b\": \"hi\"\n\"c\": 3}" => three(1, "hi", 3),
+            "{, ,\n,\r,\t,\"a\": 1, ,\n,\r,\t,\"b\": \"hi\", ,\n,\r,\t,\"c\": 3, ,\n,\r,\t,}" => three(1, "hi", 3)
+        }
     }
 
     #[test]
-    fn ignores_ws() {
-        let parts = r#"{"key": 42}"#.split(" ").collect::<Vec<_>>();
+    fn expect_errors() {
+        let cases = [
+            (
+                r#"{"a": 1"b": "hi","c": 3}"#,
+                ParserErrorKind::MissingSeparator,
+            ),
+            ("{}", ParserErrorKind::Custom), // Missing keys
+        ];
 
-        for ws_after_part_i in 0..parts.len() - 1 {
-            let mut source = String::new();
-            for (i, part) in parts.iter().enumerate() {
-                source.push_str(part);
-                if i == ws_after_part_i {
-                    source.push_str(" \n\t ");
-                }
-            }
+        for (src, expected) in cases {
+            let actual = match from_bytes::<ThreeKeys>(src.as_bytes()) {
+                Ok(_) => panic!("`{src}` was meant to fail"),
+                Err(error) => error.kind(),
+            };
 
-            let value: TestStruct = from_bytes(source.as_bytes()).expect("struct deserializes");
-            assert_eq!(value, TestStruct { key: 42 }, "source: {source:?}");
+            assert_eq!(actual, expected, "parsing `{src}`");
         }
     }
+
+    //region Utils
+    #[derive(Debug, serde_derive::Deserialize, PartialEq)]
+    struct OneKey {
+        key: u32,
+    }
+
+    #[derive(Debug, serde_derive::Deserialize, PartialEq)]
+    struct ThreeKeys {
+        a: u32,
+        b: String,
+        c: u32,
+    }
+
+    fn three(a: u32, b: &str, c: u32) -> ThreeKeys {
+        ThreeKeys { a, b: b.into(), c }
+    }
+
+    #[derive(Debug, serde_derive::Deserialize, PartialEq)]
+    struct Nested {
+        a: Vec<u32>,
+        b: ThreeKeys,
+    }
+
+    fn nested(a: Vec<u32>, b: ThreeKeys) -> Nested {
+        Nested { a, b }
+    }
+
+    #[derive(Debug, serde_derive::Deserialize, PartialEq)]
+    struct Partial {
+        a: Option<u32>,
+        b: Option<u32>,
+    }
+
+    fn partial(a: Option<u32>, b: Option<u32>) -> Partial {
+        Partial { a, b }
+    }
+
+    //endregion Utils
 }

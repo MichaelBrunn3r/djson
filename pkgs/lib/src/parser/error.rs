@@ -1,5 +1,6 @@
-#[derive(Debug, thiserror::Error, miette::Diagnostic)]
+#[derive(Debug, thiserror::Error, miette::Diagnostic, PartialEq)]
 pub enum ParserError {
+    //region Numbers
     #[error("invalid integer")]
     InvalidInt {
         #[label("expected at least one digit")]
@@ -11,12 +12,8 @@ pub enum ParserError {
         pos: usize,
         ty: &'static str,
     },
-    #[error("expected {expected}")]
-    Expected {
-        #[label("expected {expected}")]
-        pos: usize,
-        expected: &'static str,
-    },
+    //endregion Numbers
+    //region Strings
     #[error("unterminated string")]
     UnterminatedString {
         #[label("missing closing `\"`")]
@@ -45,11 +42,23 @@ pub enum ParserError {
         #[label("not valid UTF-8")]
         pos: usize,
     },
+    //endregion Strings
+    #[error("missing separator")]
+    MissingSeparator {
+        #[label("missing separator")]
+        pos: usize,
+    },
     #[error("unknown identifier `{found}`")]
     InvalidIdentifier {
         #[label("not one of the expected identifiers")]
         pos: usize,
         found: String,
+    },
+    #[error("expected {expected}")]
+    Expected {
+        #[label("expected {expected}")]
+        pos: usize,
+        expected: &'static str,
     },
     #[cfg(feature = "serde")]
     #[error("{msg}")]
@@ -71,31 +80,41 @@ pub type ParserResult<T> = Result<T, ParserError>;
 #[cfg(test)]
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub(crate) enum ParserErrorKind {
+    // Numbers
     InvalidInt,
     Overflow,
-    Expected,
+    // Strings
     UnterminatedString,
     InvalidEscape,
     InvalidUtf16,
     ControlCharacter,
     InvalidUtf8,
+    // Other
+    Expected,
     InvalidIdentifier,
+    MissingSeparator,
     Custom,
 }
 
 #[cfg(test)]
 impl ParserError {
     pub(crate) fn kind(&self) -> ParserErrorKind {
+        use crate::parser::error::ParserErrorKind::MissingSeparator;
+
         match self {
+            // Numbers
             ParserError::InvalidInt { .. } => ParserErrorKind::InvalidInt,
             ParserError::Overflow { .. } => ParserErrorKind::Overflow,
-            ParserError::Expected { .. } => ParserErrorKind::Expected,
-            ParserError::UnterminatedString { .. } => ParserErrorKind::UnterminatedString,
+            // Strings
             ParserError::InvalidEscape { .. } => ParserErrorKind::InvalidEscape,
+            ParserError::UnterminatedString { .. } => ParserErrorKind::UnterminatedString,
             ParserError::InvalidUtf16 { .. } => ParserErrorKind::InvalidUtf16,
             ParserError::ControlCharacter { .. } => ParserErrorKind::ControlCharacter,
             ParserError::InvalidUtf8 { .. } => ParserErrorKind::InvalidUtf8,
+            // Other
+            ParserError::Expected { .. } => ParserErrorKind::Expected,
             ParserError::InvalidIdentifier { .. } => ParserErrorKind::InvalidIdentifier,
+            ParserError::MissingSeparator { .. } => MissingSeparator,
             ParserError::Custom { .. } => ParserErrorKind::Custom,
         }
     }

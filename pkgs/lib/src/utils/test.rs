@@ -47,12 +47,13 @@ macro_rules! discard_ok {
 pub(crate) use discard_ok;
 
 //region assert_deserializes
+#[track_caller]
 pub(crate) fn assert_deserializes<T>(src: &str, expected: T)
 where
     T: serde::de::DeserializeOwned + PartialEq + std::fmt::Debug,
 {
-    let actual = from_bytes::<T>(src.as_bytes()).expect("parses");
-    assert_eq!(actual, expected, "parsing `{src}`");
+    let actual = from_bytes::<T>(src.as_bytes());
+    assert_eq!(actual, Ok(expected), "src=`{src}`");
 }
 
 /// Asserts that each case parses into its expected value.

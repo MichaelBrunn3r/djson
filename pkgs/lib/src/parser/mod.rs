@@ -25,6 +25,18 @@ impl<'src> Parser<'src> {
         }
     }
 
+    pub(crate) fn skip_entry_separator(&mut self) -> bool {
+        let start = self.pos;
+        while self
+            .peek()
+            .is_some_and(|byte| byte.is_ascii_whitespace() || byte == b',')
+        {
+            self.pos += 1;
+        }
+
+        self.pos != start
+    }
+
     /// Skips the spaces, tabs and line breaks that are insignificant between
     /// tokens.
     fn skip_whitespace(&mut self) {

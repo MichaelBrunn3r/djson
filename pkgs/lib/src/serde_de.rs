@@ -130,8 +130,15 @@ impl<'de> serde::de::SeqAccess<'de> for ListAccess<'_, 'de> {
     where
         T: serde::de::DeserializeSeed<'de>,
     {
-        if !self.de.parser.advance_to_next_item(self.first)? {
+        let separated = self.de.parser.skip_entry_separator();
+        if self.de.parser.eat_list_end() {
             return Ok(None);
+        }
+
+        if !self.first && !separated {
+            return Err(ParserError::MissingSeparator {
+                pos: self.de.parser.pos,
+            });
         }
         self.first = false;
 
@@ -163,15 +170,22 @@ impl<'de> serde::de::MapAccess<'de> for StructAccess<'_, 'de> {
     where
         K: serde::de::DeserializeSeed<'de>,
     {
-        if !self.de.parser.advance_to_next_kv(self.first)? {
+        let separated = self.de.parser.skip_entry_separator();
+        if self.de.parser.eat_map_end() {
             return Ok(None);
+        }
+
+        if !self.first && !separated {
+            return Err(ParserError::MissingSeparator {
+                pos: self.de.parser.pos,
+            });
         }
         self.first = false;
 
-        let field = self.de.parser.parse_known_key(self.fields)?;
+        let field_name = self.de.parser.parse_known_key(self.fields)?;
 
         self.de.parser.expect_kv_separator()?;
-        seed.deserialize(BorrowedStrDeserializer::new(field))
+        seed.deserialize(BorrowedStrDeserializer::new(field_name))
             .map(Some)
     }
 
@@ -190,32 +204,7 @@ mod tests {
     use serde::de::DeserializeSeed;
 
     use super::*;
-    use crate::{
-        ParserResult, from_bytes,
-        utils::test::{ArenaString, discard_ok, fmt_report, fmt_snapshot_case, fmt_snapshot_cases},
-    };
-
-    #[test]
-    fn diagnostics() {
-        let cases: &[(&str, &str, fn(&[u8]) -> ParserResult<()>)] = &[
-            ("not a list", "1", discard_ok!(from_bytes::<Vec<u8>>)),
-            (
-                "missing separator",
-                "[1 2]",
-                discard_ok!(from_bytes::<Vec<u8>>),
-            ),
-            ("unclosed list", "[1, 2", discard_ok!(from_bytes::<Vec<u8>>)),
-        ];
-
-        let snap = fmt_snapshot_cases(cases, |&(label, source_code, parse)| {
-            let error = parse(source_code.as_bytes())
-                .err()
-                .expect("case is meant to fail");
-            let report = miette::Report::from(error).with_source_code(source_code);
-            fmt_snapshot_case(label, &[("error", &fmt_report(&report))])
-        });
-        insta::assert_snapshot!(snap);
-    }
+    use crate::utils::test::ArenaString;
 
     #[test]
     fn deserializes_with_seed() {

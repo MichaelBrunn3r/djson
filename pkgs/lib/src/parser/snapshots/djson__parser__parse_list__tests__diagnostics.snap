@@ -1,5 +1,5 @@
 ---
-source: pkgs/lib/src/serde_de.rs
+source: pkgs/lib/src/parser/parse_list.rs
 expression: snap
 ---
 not a list
@@ -11,15 +11,15 @@ error: `  × expected `[`
            ╰────`
 
 missing separator
-error: `  × expected `,` or `]`
+error: `  × missing separator
            ╭────
-         1 │ [1 2]
-           ·    ▲
-           ·    ╰── expected `,` or `]`
+         1 │ ["a""b"]
+           ·     ▲
+           ·     ╰── missing separator
            ╰────`
 
-unclosed list
-error: `  × expected `,` or `]`
+unterminated list
+error: `  × missing separator
            ╭────
          1 │ [1, 2
            ╰────`
