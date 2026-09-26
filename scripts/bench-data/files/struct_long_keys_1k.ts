@@ -5,10 +5,10 @@ import type { Recipe } from "./mod.ts";
 const one = intWriter(range(1, 1));
 
 const struct = structWriter({
-    successful_laser_dot_captures: one,
-    total_minutes_spent_sleeping: one,
-    objects_pushed_off_ledge_count: one,
-    equivalent_volume_in_milliliters: one,
+    successful_laser_dot_captures: [one, false],
+    total_minutes_spent_sleeping: [one, false],
+    objects_pushed_off_ledge_count: [one, false],
+    equivalent_volume_in_milliliters: [one, false],
 });
 
 /** A flat list of structs with long field names */

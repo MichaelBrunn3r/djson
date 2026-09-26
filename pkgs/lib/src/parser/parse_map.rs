@@ -66,10 +66,14 @@ mod test {
     #[test]
     fn deserializes() {
         assert_deserializes_cases! {
-            "{}" => partial(None, None),
-            // r#"{"a": 1}"# => partial(Some(1), None), // TODO options not working
-            // r#"{"b": 1}"# => partial(None, Some(1)),
             r#"{"a": [1,2,3], "b": {"a": 1, "b": "hi", "c": 3}}"# => nested(vec![1,2,3], three(1,"hi", 3)), // Nested
+
+            // Partial
+            "{}" => partial(None, None),
+            r#"{"a": 1, "b": 2}"# => partial(Some(1), Some(2)),
+            r#"{"a": 1}"# => partial(Some(1), None),
+            r#"{"b": 1}"# => partial(None, Some(1)),
+            r#"{"a": null "b": null}"# => partial(None, None),
 
             // Entry separators
             r#"{"a": 1,"b": "hi","c": 3}"# => three(1, "hi", 3),

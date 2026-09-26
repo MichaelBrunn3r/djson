@@ -25,6 +25,19 @@ impl<'src> Parser<'src> {
         }
     }
 
+    pub(crate) fn parse_bool(&mut self) -> ParserResult<bool> {
+        if self.eat_keyword(b"true") {
+            return Ok(true);
+        } else if self.eat_keyword(b"false") {
+            return Ok(false);
+        }
+
+        Err(ParserError::Expected {
+            pos: self.pos,
+            expected: "`true` or `false`",
+        })
+    }
+
     pub(crate) fn skip_entry_separator(&mut self) -> bool {
         let start = self.pos;
         while self
@@ -85,6 +98,32 @@ impl<'src> Parser<'src> {
         true
     }
 
+    /// Consumes the next `n = keyword.len()` bytes if they match `keyword` and
+    /// are followed by an identifier boundary.
+    ///
+    /// ## Returns
+    /// Whether the keyword was consumed.
+    pub(crate) fn eat_keyword(&mut self, keyword: &[u8]) -> bool {
+        let Some(src_rest) = self.src.get(self.pos..) else {
+            return false;
+        };
+
+        if !src_rest.starts_with(keyword) {
+            return false;
+        }
+
+        // Keyword must be a standalone token (e.g. `null 1`, `null]` but not `null_1`)
+        if src_rest
+            .get(keyword.len())
+            .is_some_and(|&byte| byte.is_ascii_alphanumeric() || byte == b'_')
+        {
+            return false;
+        }
+
+        self.pos += keyword.len();
+        true
+    }
+
     /// Consumes the next byte if it matches `expected`.
     ///
     /// ## Errors
@@ -98,4 +137,43 @@ impl<'src> Parser<'src> {
             expected,
         })
     }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::utils::test::assert_deserializes_cases;
+
+    #[test]
+    fn eat_keyword() {
+        assert_deserializes_cases! {
+            "null" => None::<u32>,
+            "[null]" => vec![None::<u32>],
+            "[null,null]" => vec![None::<u32>, None::<u32>],
+            "[ null , null ]" => vec![None::<u32>, None::<u32>],
+        }
+    }
+
+    #[test]
+    fn deserializes_options() {
+        assert_deserializes_cases! {
+            "1" => Some(1u32),
+            r#""hi""# => Some("hi".to_owned()),
+
+            // In container
+            "[null, 1]" => vec![None::<u32>, Some(1u32)],
+            "[[null], null]" => vec![Some(vec![None::<u32>]), None], // Nested
+        }
+    }
+
+    #[test]
+    fn deserializes_bools() {
+        assert_deserializes_cases! {
+            "true" => true,
+            "false" => false,
+            "[true, false]" => vec![true, false]
+        }
+    }
+
+    // TRUE FALSE trUe FalSe yes no
 }

@@ -34,6 +34,18 @@ fn parse_struct(c: &mut Criterion) {
         },
     );
 
+    let partial = utils::read_bench_resource("struct_partial_1k.dj");
+    group.bench_with_input(
+        BenchmarkId::from_parameter("struct_partial_1k"),
+        &partial,
+        |benchmark, src| {
+            benchmark.iter(|| {
+                let values: Vec<Partial> = from_bytes(black_box(src)).expect("document parses");
+                black_box(values)
+            });
+        },
+    );
+
     group.finish();
 }
 
@@ -56,4 +68,16 @@ struct CatStats {
     total_minutes_spent_sleeping: u64,
     objects_pushed_off_ledge_count: u64,
     equivalent_volume_in_milliliters: u64,
+}
+
+#[allow(dead_code)]
+#[derive(serde_derive::Deserialize)]
+struct Partial {
+    a: Option<u64>,
+    b: Option<u64>,
+    c: Option<u64>,
+    d: Option<u64>,
+    e: Option<u64>,
+    f: Option<u64>,
+    g: Option<u64>,
 }

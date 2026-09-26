@@ -5,10 +5,10 @@ import type { Recipe } from "./mod.ts";
 const one = intWriter(range(1, 1));
 
 const struct = structWriter({
-    id: one,
-    age: one,
-    name: one,
-    score: one,
+    id: [one, false],
+    age: [one, false],
+    name: [one, false],
+    score: [one, false],
 });
 
 /** A flat list of structs with short field names */

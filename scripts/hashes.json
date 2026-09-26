@@ -4,6 +4,7 @@
   "pkgs/lib/benches/res/str_short_5k.dj": "05f243fc13aca345a7be6f2dbcbd62c0f2f71e96b092a30c8fa15f439635981c",
   "pkgs/lib/benches/res/str_utf16_escapes_5k.dj": "e8c9bd74761babc81052f5134b1be7a078b99c9a8344bd660b8a45d87b2c0a16",
   "pkgs/lib/benches/res/struct_long_keys_1k.dj": "b5d1fc3a1b48b1cd70620d245b39f0322e87d0ae227461403164c468e8fef26b",
+  "pkgs/lib/benches/res/struct_partial_1k.dj": "c0e3feb0c759b2c94e27289608080773164d2629e12314a5dabee42888b2fedc",
   "pkgs/lib/benches/res/struct_short_keys_1k.dj": "cbf1084eb82ea68320521b77c7847d377406e8b4d6d34a40f7e6f787908bdf83",
   "pkgs/lib/benches/res/u64_mixed_5k.dj": "c6b09d11fd747f15e6001f26aab0a34aa67f7395dc7bacfd4341444adbbdb4a2",
   "pkgs/lib/benches/res/u64_short_5k.dj": "6fe1fdb04b31f01a8b5f7be89a6eb30b5d498aa3b6535294725042d88b415e5e",

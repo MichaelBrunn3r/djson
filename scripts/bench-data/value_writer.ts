@@ -183,15 +183,33 @@ export function boolWriter(): ValueWriter {
   };
 }
 
-const NULLS: readonly Uint8Array[] = [
-  encoder.encode("none"),
-  encoder.encode("null"),
-  encoder.encode("nil"),
-];
+const NULL = encoder.encode("null");
 export function nullWriter(): ValueWriter {
   return {
-    write(rng: Random, writer: Writer, _depthBudget: number): void {
-      writer.writeBytes(rng.pick(NULLS));
+    write(_rng: Random, writer: Writer, _depthBudget: number): void {
+      writer.writeBytes(NULL);
+    },
+  };
+}
+
+/** Writes `null` with chance `nullChance` and `inner` otherwise. */
+export function nullableWriter(
+  inner: ValueWriter,
+  { nullChance = 0.5 }: { nullChance?: number } = {},
+): ValueWriter {
+  assert(
+    nullChance >= 0 && nullChance <= 1,
+    `null chance must be in [0, 1], got: ${nullChance}`,
+  );
+
+  const null_ = nullWriter();
+  return {
+    write(rng: Random, writer: Writer, depthBudget: number): void {
+      if (rng.nextFloat() < nullChance) {
+        null_.write(rng, writer, depthBudget);
+        return;
+      }
+      inner.write(rng, writer, depthBudget);
     },
   };
 }
@@ -473,16 +491,22 @@ export function mapWriter(
 
 const PATTERN_RUST_IDENTIFIER = /^[A-Za-z_][A-Za-z0-9_]*$/;
 
-/** Writes a map that holds exactly `fields`, in a shuffled order. */
+/** Writes a map that holds `fields`, in a shuffled order. */
 export function structWriter(
-  fields: Readonly<Record<string, ValueWriter>>,
+  fields: Readonly<Record<string, readonly [ValueWriter, boolean]>>,
+  { optionalChance = 0.5 }: { optionalChance?: number } = {},
 ): ValueWriter {
-  const members = Object.entries(fields).map(([name, value]) => {
+  assert(
+    optionalChance >= 0 && optionalChance <= 1,
+    `optional chance must be in [0, 1], got: ${optionalChance}`,
+  );
+
+  const members = Object.entries(fields).map(([name, [value, optional]]) => {
     assert(
       PATTERN_RUST_IDENTIFIER.test(name),
       `struct field name must be a Rust identifier, got: ${name}`,
     );
-    return { name: encoder.encode(`"${name}": `), value };
+    return { name: encoder.encode(`"${name}": `), value, optional };
   });
 
   assert(members.length > 0, "a struct needs at least one field");
@@ -502,15 +526,26 @@ export function structWriter(
 
       writer.writeByte(BYTE_OPEN_BRACE);
       writer.indent();
-      for (let i = 0; i < order.length; i++) {
-        if (i > 0) writer.writeByte(BYTE_COMMA);
+      let written = 0;
+      for (const index of order) {
+        const member = members[index];
+
+        if (
+          member.optional &&
+          optionalChance > 0 &&
+          rng.nextFloat() < optionalChance
+        ) {
+          continue;
+        }
+
+        if (written > 0) writer.writeByte(BYTE_COMMA);
         writer.newline();
-        const member = members[order[i]];
         writer.writeBytes(member.name);
         member.value.write(rng, writer, depthBudget);
+        written++;
       }
       writer.dedent();
-      writer.newline();
+      if (written > 0) writer.newline();
       writer.writeByte(BYTE_CLOSE_BRACE);
     },
   };

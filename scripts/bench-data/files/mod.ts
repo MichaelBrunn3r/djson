@@ -7,6 +7,7 @@ import { recipe as u64_mixed_5k_recipe } from "./u64_mixed_5k.ts";
 import { recipe as u64_short_5k_recipe } from "./u64_short_5k.ts";
 import { recipe as struct_short_keys_1k_recipe } from "./struct_short_keys_1k.ts";
 import { recipe as struct_long_keys_1k_recipe } from "./struct_long_keys_1k.ts";
+import { recipe as struct_partial_1k_recipe } from "./struct_partial_1k.ts";
 import { recipe as utf16_escapes_1k_recipe } from "./utf16_escapes_1k.ts";
 
 export const BENCHMARK_FILES: Readonly<Record<string, BenchmarkFile>> = {
@@ -46,6 +47,10 @@ export const BENCHMARK_FILES: Readonly<Record<string, BenchmarkFile>> = {
     struct_long_keys_1k: {
         path: "pkgs/lib/benches/res/struct_long_keys_1k.dj",
         recipe: struct_long_keys_1k_recipe,
+    },
+    struct_partial_1k: {
+        path: "pkgs/lib/benches/res/struct_partial_1k.dj",
+        recipe: struct_partial_1k_recipe,
     },
     // endregion struct
     utf16_escapes_1k: {

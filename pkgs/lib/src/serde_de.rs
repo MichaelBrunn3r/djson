@@ -43,6 +43,24 @@ impl<'de> serde::Deserializer<'de> for &mut Deserializer<'de> {
         unimplemented!()
     }
 
+    fn deserialize_option<V>(self, visitor: V) -> Result<V::Value, Self::Error>
+    where
+        V: serde::de::Visitor<'de>,
+    {
+        if self.parser.eat_keyword(b"null") {
+            return visitor.visit_none();
+        }
+
+        visitor.visit_some(self)
+    }
+
+    fn deserialize_bool<V>(self, visitor: V) -> Result<V::Value, Self::Error>
+    where
+        V: serde::de::Visitor<'de>,
+    {
+        visitor.visit_bool(self.parser.parse_bool()?)
+    }
+
     impl_deserialize_uint! {
         deserialize_u8 => u8, visit_u8;
         deserialize_u16 => u16, visit_u16;
@@ -111,8 +129,8 @@ impl<'de> serde::Deserializer<'de> for &mut Deserializer<'de> {
     }
 
     serde::forward_to_deserialize_any! {
-        bool i8 i16 i32 i64 f32 f64
-        char bytes byte_buf option unit unit_struct
+        i8 i16 i32 i64 f32 f64
+        char bytes byte_buf unit unit_struct
         map newtype_struct enum identifier ignored_any
     }
 }
