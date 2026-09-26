@@ -31,30 +31,29 @@ impl<'src> Parser<'src> {
     ) -> ParserResult<&'static str> {
         self.expect(b'"', "`\"`")?;
 
-        // Get the key
         let key_start = self.pos;
-        let key_len = self.src[key_start..]
-            .iter()
-            .position(|&byte| byte == b'"')
-            .ok_or(ParserError::UnterminatedString {
-                pos: self.src.len(),
-            })?;
-        let key_end = key_start + key_len;
-        let key = &self.src[key_start..key_end];
+        let rest = &self.src[key_start..];
 
-        // Match against allowed keys
-        let Some(identifier) = identifiers
-            .iter()
-            .find(|identifier| identifier.as_bytes() == key)
-            .copied()
-        else {
-            return Err(ParserError::InvalidIdentifier {
-                pos: key_start,
-                found: String::from_utf8_lossy(key).into_owned(),
-            });
-        };
-        self.pos = key_end + 1;
-        Ok(identifier)
+        // For one of the keys to match, `rest` must start with `key"`.
+        if let Some(identifier) = identifiers.iter().copied().find(|identifier| {
+            let bytes = identifier.as_bytes();
+            rest.get(bytes.len()) == Some(&b'"') && rest.starts_with(bytes)
+        }) {
+            self.pos = key_start + identifier.len() + 1;
+            return Ok(identifier);
+        }
+
+        // No match found -> Extract the offending identifier
+        let key_len =
+            rest.iter()
+                .position(|&byte| byte == b'"')
+                .ok_or(ParserError::UnterminatedString {
+                    pos: self.src.len(),
+                })?;
+        Err(ParserError::InvalidIdentifier {
+            pos: key_start,
+            found: String::from_utf8_lossy(&rest[..key_len]).into_owned(),
+        })
     }
 }
 
@@ -76,7 +75,11 @@ mod test {
             r#"{"a": 1,"b": "hi","c": 3}"# => three(1, "hi", 3),
             r#"{"a": 1 "b": "hi" "c": 3}"# => three(1, "hi", 3),
             "{\"a\": 1\n\"b\": \"hi\"\n\"c\": 3}" => three(1, "hi", 3),
-            "{, ,\n,\r,\t,\"a\": 1, ,\n,\r,\t,\"b\": \"hi\", ,\n,\r,\t,\"c\": 3, ,\n,\r,\t,}" => three(1, "hi", 3)
+            "{, ,\n,\r,\t,\"a\": 1, ,\n,\r,\t,\"b\": \"hi\", ,\n,\r,\t,\"c\": 3, ,\n,\r,\t,}" => three(1, "hi", 3),
+
+            // Recognizes the correct known key, even if keys share prefixes
+            r#"{"car": 1, "carpet": 2}"# => keys_prefix(1, 2),
+            r#"{"carpet": 2, "car": 1}"# => keys_prefix(1, 2),
         }
     }
 
@@ -87,6 +90,8 @@ mod test {
                 r#"{"a": 1"b": "hi","c": 3}"#,
                 ParserErrorKind::MissingSeparator,
             ),
+            (r#"{"x": 1, "b": 2}"#, ParserErrorKind::InvalidIdentifier),
+            (r#"{"a: 1}"#, ParserErrorKind::UnterminatedString),
             ("{}", ParserErrorKind::Custom), // Missing keys
         ];
 
@@ -101,11 +106,6 @@ mod test {
     }
 
     //region Utils
-    #[derive(Debug, serde_derive::Deserialize, PartialEq)]
-    struct OneKey {
-        key: u32,
-    }
-
     #[derive(Debug, serde_derive::Deserialize, PartialEq)]
     struct ThreeKeys {
         a: u32,
@@ -135,6 +135,17 @@ mod test {
 
     fn partial(a: Option<u32>, b: Option<u32>) -> Partial {
         Partial { a, b }
+    }
+
+    /// 2 keys, one is the prefix of the other
+    #[derive(Debug, serde_derive::Deserialize, PartialEq)]
+    struct KeysPrefix {
+        car: u32,
+        carpet: u32,
+    }
+
+    fn keys_prefix(car: u32, carpet: u32) -> KeysPrefix {
+        KeysPrefix { car, carpet }
     }
 
     //endregion Utils
