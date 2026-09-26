@@ -1,9 +1,9 @@
-import { range } from "../range.ts";
-import { escapedStringWriter } from "../djson_utils.ts";
-import { listWriter } from "../value_writer.ts";
-import { flatten, weighted } from "../weight_tree.ts";
-import { WeightedChoices } from "../weighted_choices.ts";
-import type { Recipe } from "./mod.ts";
+import { range } from "../../range.ts";
+import { escapedStringWriter } from "../../djson_utils.ts";
+import { listWriter } from "../../value_writer.ts";
+import { flatten, weighted } from "../../weight_tree.ts";
+import { WeightedChoices } from "../../weighted_choices.ts";
+import type { Recipe } from "../mod.ts";
 
 const stringWriters = new WeightedChoices(
   flatten([

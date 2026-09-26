@@ -3,7 +3,8 @@
 use std::hint::black_box;
 
 use criterion::{
-    BenchmarkGroup, BenchmarkId, Criterion, criterion_group, criterion_main, measurement::WallTime,
+    BenchmarkGroup, BenchmarkId, Criterion, Throughput, criterion_group, criterion_main,
+    measurement::WallTime,
 };
 use djson::from_bytes;
 use rand::{RngExt, SeedableRng as _, rngs::StdRng};
@@ -34,6 +35,9 @@ fn parse_integers(c: &mut Criterion) {
 }
 
 fn bench_nums(group: &mut BenchmarkGroup<'_, WallTime>, name: &str, nums: &[String]) {
+    group.throughput(Throughput::BytesDecimal(
+        nums.iter().map(String::len).sum::<usize>() as u64,
+    ));
     group.bench_with_input(
         BenchmarkId::new("djson", name),
         nums,

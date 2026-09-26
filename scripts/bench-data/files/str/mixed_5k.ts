@@ -4,12 +4,12 @@ import {
     PAIR_UNICODE_ESCAPES,
     pickByWeight,
     SINGLE_UNICODE_ESCAPES,
-} from "../djson_utils.ts";
-import { range } from "../range.ts";
-import { listWriter } from "../value_writer.ts";
-import { flatten, weighted } from "../weight_tree.ts";
-import { WeightedChoices } from "../weighted_choices.ts";
-import type { Recipe } from "./mod.ts";
+} from "../../djson_utils.ts";
+import { range } from "../../range.ts";
+import { listWriter } from "../../value_writer.ts";
+import { flatten, weighted } from "../../weight_tree.ts";
+import { WeightedChoices } from "../../weighted_choices.ts";
+import type { Recipe } from "../mod.ts";
 
 const escapeChance = 0.02;
 const pickEscape = pickByWeight([

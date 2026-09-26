@@ -3,7 +3,7 @@
 use std::hint::black_box;
 
 use bumpalo::{Bump, collections::Vec as ArenaVec};
-use criterion::{BenchmarkId, Criterion, criterion_group, criterion_main};
+use criterion::{BenchmarkId, Criterion, Throughput, criterion_group, criterion_main};
 use djson::{Deserializer, from_bytes};
 use serde::de::DeserializeSeed;
 use serde_state::de::SeqSeed;
@@ -13,35 +13,33 @@ mod utils;
 fn parse_str(c: &mut Criterion) {
     let mut group = c.benchmark_group("parse_str");
 
-    for (name, can_borrow) in [
-        ("str_short_5k", true),
-        ("str_escaped_5k", false),
-        ("str_utf16_escapes_5k", false),
-        ("str_mixed_5k", false),
+    for (file, can_borrow) in [
+        ("str/short_5k.dj", true),
+        ("str/escaped_5k.dj", false),
+        ("str/utf16_escapes_5k.dj", false),
+        ("str/mixed_5k.dj", false),
     ] {
-        let src = utils::read_bench_resource(&format!("{name}.dj"));
+        let src = utils::read_bench_resource(file);
+        let id = utils::resource_id(file);
+        group.throughput(Throughput::BytesDecimal(src.len() as u64));
 
         if can_borrow {
-            group.bench_with_input(
-                BenchmarkId::new("borrowed", name),
-                &src,
-                |benchmark, src| {
-                    benchmark.iter(|| {
-                        let values: Vec<&str> =
-                            from_bytes(black_box(src)).expect("document parses");
-                        black_box(values)
-                    });
-                },
-            );
+            group.bench_with_input(BenchmarkId::new("borrowed", &id), &src, |benchmark, src| {
+                benchmark.iter(|| {
+                    let values: Vec<&str> = from_bytes(black_box(src)).expect("document parses");
+                    black_box(values)
+                });
+            });
         } else {
-            // group.bench_with_input(BenchmarkId::new("owned", name), &src, |benchmark, src| {
+            // Old code that borrows without an arena. Not a scenario I care about.
+            // group.bench_with_input(BenchmarkId::new("owned", &id), &src, |benchmark, src| {
             //     benchmark.iter(|| {
             //         let values: Vec<String> = from_bytes(black_box(src)).expect("document parses");
             //         black_box(values)
             //     });
             // });
 
-            group.bench_with_input(BenchmarkId::new("arena", name), &src, |benchmark, src| {
+            group.bench_with_input(BenchmarkId::new("arena", &id), &src, |benchmark, src| {
                 benchmark.iter(|| {
                     let arena = Bump::new();
                     let mut deserializer = Deserializer::new(black_box(src));

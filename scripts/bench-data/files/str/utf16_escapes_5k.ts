@@ -3,16 +3,16 @@ import {
     PAIR_UNICODE_ESCAPES,
     pickByWeight,
     SINGLE_UNICODE_ESCAPES,
-} from "../djson_utils.ts";
-import { type Range, range } from "../range.ts";
+} from "../../djson_utils.ts";
+import { type Range, range } from "../../range.ts";
 import {
     listWriter,
     type SequencePicker,
     type ValueWriter,
-} from "../value_writer.ts";
-import { flatten, weighted } from "../weight_tree.ts";
-import { WeightedChoices } from "../weighted_choices.ts";
-import type { Recipe } from "./mod.ts";
+} from "../../value_writer.ts";
+import { flatten, weighted } from "../../weight_tree.ts";
+import { WeightedChoices } from "../../weighted_choices.ts";
+import type { Recipe } from "../mod.ts";
 
 const singleEscapes = pickByWeight(SINGLE_UNICODE_ESCAPES);
 const pairEscapes = pickByWeight(PAIR_UNICODE_ESCAPES);

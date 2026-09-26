@@ -1,10 +1,15 @@
 //! Helpers shared by the benchmark binaries.
 #![allow(dead_code)]
 
-use std::{fs, path::PathBuf};
+use std::{fs, hint::black_box, path::PathBuf};
 
 use bumpalo::Bump;
-use serde::de::{DeserializeSeed, Deserializer, Visitor};
+use criterion::{BenchmarkGroup, BenchmarkId, Throughput, measurement::WallTime};
+use djson::from_bytes;
+use serde::{
+    Deserialize,
+    de::{DeserializeSeed, Deserializer, Visitor},
+};
 
 /// Reads the document named `name` from the bench resource directory.
 pub fn read_bench_resource(name: &str) -> Vec<u8> {
@@ -17,6 +22,34 @@ pub fn resolve_bench_resource(name: &str) -> PathBuf {
     PathBuf::from(env!("CARGO_MANIFEST_DIR"))
         .join("benches/res")
         .join(name)
+}
+
+/// Id derived from a bench resource path.
+pub fn resource_id(path: &str) -> String {
+    let stem = match path.rfind('.') {
+        Some(dot) if !path[dot..].contains('/') => &path[..dot],
+        _ => path,
+    };
+    stem.replace('/', "_")
+}
+
+/// Benchmarks deserializing the data in `file` using `from_bytes::<T>`.
+pub fn bench_from_bytes<T>(group: &mut BenchmarkGroup<'_, WallTime>, file: &str)
+where
+    T: for<'de> Deserialize<'de>,
+{
+    let src = read_bench_resource(file);
+    group.throughput(Throughput::BytesDecimal(src.len() as u64));
+    group.bench_with_input(
+        BenchmarkId::from_parameter(resource_id(file)),
+        &src,
+        |benchmark, src| {
+            benchmark.iter(|| {
+                let value: T = from_bytes(black_box(src)).expect("document parses");
+                black_box(value)
+            });
+        },
+    );
 }
 
 #[derive(Clone, Copy)]

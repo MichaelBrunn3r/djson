@@ -2,7 +2,7 @@
 
 use std::hint::black_box;
 
-use criterion::{Criterion, criterion_group, criterion_main};
+use criterion::{Criterion, Throughput, criterion_group, criterion_main};
 
 mod utils;
 
@@ -12,6 +12,7 @@ fn compare_parse_hex4(c: &mut Criterion) {
     let src = utils::read_bench_resource("utf16_escapes_1k.txt");
     let src = src.strip_suffix(b"\n").unwrap_or(&src); // the generator added a \n
     let num_escapes = src.len() / "\\uXXXX".len();
+    group.throughput(Throughput::BytesDecimal(src.len() as u64));
 
     for &(impl_name, parse) in &IMPLS {
         group.bench_with_input(impl_name, &num_escapes, |benchmark, &num_escapes| {

@@ -1,6 +1,6 @@
-import { range } from "../range.ts";
-import { intWriter, listWriter, structWriter } from "../value_writer.ts";
-import type { Recipe } from "./mod.ts";
+import { range } from "../../range.ts";
+import { intWriter, listWriter, structWriter } from "../../value_writer.ts";
+import type { Recipe } from "../mod.ts";
 
 const one = intWriter(range(1, 1));
 

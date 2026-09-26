@@ -1,11 +1,11 @@
-import { range } from "../range.ts";
+import { range } from "../../range.ts";
 import {
     intWriter,
     listWriter,
     nullableWriter,
     structWriter,
-} from "../value_writer.ts";
-import type { Recipe } from "./mod.ts";
+} from "../../value_writer.ts";
+import type { Recipe } from "../mod.ts";
 
 const value = nullableWriter(intWriter(range(1, 1)));
 

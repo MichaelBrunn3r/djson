@@ -1,13 +1,13 @@
-import { range } from "../range.ts";
+import { range } from "../../range.ts";
 import {
   BYTE_DOUBLE_QUOTE,
   delimitedWriter,
   listWriter,
   stringWriter,
-} from "../value_writer.ts";
-import { flatten, weighted } from "../weight_tree.ts";
-import { WeightedChoices } from "../weighted_choices.ts";
-import type { Recipe } from "./mod.ts";
+} from "../../value_writer.ts";
+import { flatten, weighted } from "../../weight_tree.ts";
+import { WeightedChoices } from "../../weighted_choices.ts";
+import type { Recipe } from "../mod.ts";
 
 const stringWriters = new WeightedChoices(
   flatten([

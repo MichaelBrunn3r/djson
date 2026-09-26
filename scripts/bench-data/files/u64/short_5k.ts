@@ -1,8 +1,8 @@
-import { range } from "../range.ts";
-import { intWriter, listWriter } from "../value_writer.ts";
-import { flatten } from "../weight_tree.ts";
-import { WeightedChoices } from "../weighted_choices.ts";
-import type { Recipe } from "./mod.ts";
+import { range } from "../../range.ts";
+import { intWriter, listWriter } from "../../value_writer.ts";
+import { flatten } from "../../weight_tree.ts";
+import { WeightedChoices } from "../../weighted_choices.ts";
+import type { Recipe } from "../mod.ts";
 
 const integerWriters = new WeightedChoices(
   flatten([
