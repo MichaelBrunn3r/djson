@@ -1,13 +1,11 @@
 import { assert } from "jsr:@std/assert";
 import { ensureFileSync } from "jsr:@std/fs/ensure-file";
 import { existsSync } from "jsr:@std/fs/exists";
+import { HASHES_FILE, load_hashes, save_hashes } from "../hashes.ts";
 import {
   BENCHMARK_FILES,
   type BenchmarkFile,
-  HASHES_FILE,
-  load_file_hashes,
   type Recipe,
-  save_file_hashes,
 } from "./files/mod.ts";
 import { Random } from "./random.ts";
 import {
@@ -16,6 +14,8 @@ import {
   type WriterResource,
 } from "./writer.ts";
 import { formatDuration, formatRate, hashFile } from "./utils.ts";
+
+export const TASK_ID_DATA = "bench-data";
 
 export interface ArgsStdout {
   /** Seed of the value stream; the caller resolves any default. */
@@ -53,7 +53,8 @@ export interface ArgsGenerateOptions {
 export async function cmd_generate_files(
   args: ArgsGenerateOptions,
 ): Promise<void> {
-  const pinned = await load_file_hashes();
+  const store = await load_hashes();
+  const pinned = store[TASK_ID_DATA] ?? {};
   const hashes: Record<string, string> = {};
   let changed = false;
 
@@ -99,7 +100,8 @@ export async function cmd_generate_files(
   }
 
   if (changed) {
-    await save_file_hashes(hashes);
+    store[TASK_ID_DATA] = hashes;
+    await save_hashes(store);
   }
 }
 

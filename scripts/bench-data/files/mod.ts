@@ -131,30 +131,3 @@ export interface Recipe {
     /** How deep values may nest before shallow values are used instead. */
     readonly maxDepth: number;
 }
-
-export const HASHES_FILE = "scripts/hashes.json";
-const HASHES_URL = new URL("../../hashes.json", import.meta.url);
-export type Hashes = Readonly<Record<string, string>>;
-
-export async function load_file_hashes(): Promise<Hashes> {
-    try {
-        return JSON.parse(await Deno.readTextFile(HASHES_URL));
-    } catch (error) {
-        if (error instanceof Deno.errors.NotFound) {
-            return {};
-        }
-        throw error;
-    }
-}
-
-export async function save_file_hashes(hashes: Hashes): Promise<void> {
-    const sorted = Object.fromEntries(
-        Object.entries(hashes).sort(([left], [right]) =>
-            left.localeCompare(right)
-        ),
-    );
-    await Deno.writeTextFile(
-        HASHES_URL,
-        `${JSON.stringify(sorted, null, 2)}\n`,
-    );
-}

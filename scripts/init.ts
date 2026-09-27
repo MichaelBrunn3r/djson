@@ -1,5 +1,6 @@
 import { parseArgs } from "jsr:@std/cli/parse-args";
-import { cmd_generate_files } from "./bench-data/cli.ts";
+import { cmd_generate_files, TASK_ID_DATA } from "./bench-data/cli.ts";
+import { cmd_download_resources, TASK_ID_DOWNLOAD } from "./task-dl.ts";
 
 interface TaskOptions {
     /** Redo work the task could otherwise skip, as if it had never run. */
@@ -18,7 +19,11 @@ interface Task {
 }
 
 const TASKS: Readonly<Record<string, Task>> = {
-    "bench-data": {
+    [TASK_ID_DOWNLOAD]: {
+        description: "download resources",
+        run: ({ reinit, update }) => cmd_download_resources({ update, reinit }),
+    },
+    [TASK_ID_DATA]: {
         description: "generate benchmark files",
         run: ({ reinit, update }) => cmd_generate_files({ update, reinit }),
     },
