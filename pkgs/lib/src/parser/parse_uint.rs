@@ -12,7 +12,7 @@ impl<'src> Parser<'src> {
     /// sep     = '_'
     /// digit   = '0' | ... | '9'
     /// ```
-    fn parse_u64(&mut self) -> ParserResult<u64> {
+    pub(crate) fn parse_u64(&mut self) -> ParserResult<u64> {
         let start = self.pos;
 
         // Must start with a digit

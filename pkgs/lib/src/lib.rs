@@ -2,9 +2,9 @@ mod parser;
 mod utils;
 
 #[cfg(feature = "serde")]
-mod serde_de;
+mod serde;
 
-pub use crate::{parser::error::ParserResult, serde_de::Deserializer};
+pub use crate::{parser::error::ParserResult, serde::de::Deserializer};
 
 /// Deserializes `src` as a single djson document.
 ///
@@ -15,7 +15,7 @@ pub use crate::{parser::error::ParserResult, serde_de::Deserializer};
 #[must_use]
 pub fn from_bytes<'src, T>(src: &'src [u8]) -> ParserResult<T>
 where
-    T: serde::Deserialize<'src>,
+    T: ::serde::Deserialize<'src>,
 {
     let mut deserializer = Deserializer::new(src);
     let value = T::deserialize(&mut deserializer)?;

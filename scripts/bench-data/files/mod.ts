@@ -3,8 +3,26 @@ import { recipe as str_short_5k_recipe } from "./str/short_5k.ts";
 import { recipe as str_mixed_5k_recipe } from "./str/mixed_5k.ts";
 import { recipe as str_escaped_5k_recipe } from "./str/escaped_5k.ts";
 import { recipe as str_utf16_escapes_5k_recipe } from "./str/utf16_escapes_5k.ts";
-import { recipe as u64_mixed_5k_recipe } from "./u64/mixed_5k.ts";
-import { recipe as u64_short_5k_recipe } from "./u64/short_5k.ts";
+import { recipe as int_mixed_5k_recipe } from "./int/mixed_5k.ts";
+import {
+    num_digits_10_30kB_recipe,
+    num_digits_18_30kB_recipe,
+    num_digits_19_30kB_recipe,
+    num_digits_1_30kB_recipe,
+    num_digits_20_30kB_recipe,
+    num_digits_3_30kB_recipe,
+    num_digits_4_30kB_recipe,
+    num_digits_7_30kB_recipe,
+    num_digits_9_30kB_recipe,
+} from "./int/num_digits.ts";
+import {
+    num_digits_sep_10_30kB_recipe,
+    num_digits_sep_18_30kB_recipe,
+    num_digits_sep_19_30kB_recipe,
+    num_digits_sep_20_30kB_recipe,
+    num_digits_sep_4_30kB_recipe,
+    num_digits_sep_9_30kB_recipe,
+} from "./int/num_digits_sep.ts";
 import { recipe as struct_short_keys_1k_recipe } from "./struct/short_keys_1k.ts";
 import { recipe as struct_long_keys_1k_recipe } from "./struct/long_keys_1k.ts";
 import { recipe as struct_partial_1k_recipe } from "./struct/partial_1k.ts";
@@ -41,16 +59,76 @@ export const BENCHMARK_FILES: Readonly<Record<string, BenchmarkFile>> = {
         recipe: str_utf16_escapes_5k_recipe,
     },
     // endregion String
-    // region uint
-    u64_mixed_5k: {
-        path: "pkgs/lib/benches/res/u64/mixed_5k.dj",
-        recipe: u64_mixed_5k_recipe,
+    // region int
+    int_mixed_5k: {
+        path: "pkgs/lib/benches/res/int/mixed_5k.dj",
+        recipe: int_mixed_5k_recipe,
     },
-    u64_short_5k: {
-        path: "pkgs/lib/benches/res/u64/short_5k.dj",
-        recipe: u64_short_5k_recipe,
+    // endregion int
+    // region int: sweep fixtures
+    num_digits_1_30kB: {
+        path: "pkgs/lib/benches/res/int/num_digits/1_30kB.dj",
+        recipe: num_digits_1_30kB_recipe,
     },
-    // endregion uint
+    num_digits_3_30kB: {
+        path: "pkgs/lib/benches/res/int/num_digits/3_30kB.dj",
+        recipe: num_digits_3_30kB_recipe,
+    },
+    num_digits_4_30kB: {
+        path: "pkgs/lib/benches/res/int/num_digits/4_30kB.dj",
+        recipe: num_digits_4_30kB_recipe,
+    },
+    num_digits_7_30kB: {
+        path: "pkgs/lib/benches/res/int/num_digits/7_30kB.dj",
+        recipe: num_digits_7_30kB_recipe,
+    },
+    num_digits_9_30kB: {
+        path: "pkgs/lib/benches/res/int/num_digits/9_30kB.dj",
+        recipe: num_digits_9_30kB_recipe,
+    },
+    num_digits_10_30kB: {
+        path: "pkgs/lib/benches/res/int/num_digits/10_30kB.dj",
+        recipe: num_digits_10_30kB_recipe,
+    },
+    num_digits_18_30kB: {
+        path: "pkgs/lib/benches/res/int/num_digits/18_30kB.dj",
+        recipe: num_digits_18_30kB_recipe,
+    },
+    num_digits_19_30kB: {
+        path: "pkgs/lib/benches/res/int/num_digits/19_30kB.dj",
+        recipe: num_digits_19_30kB_recipe,
+    },
+    num_digits_20_30kB: {
+        path: "pkgs/lib/benches/res/int/num_digits/20_30kB.dj",
+        recipe: num_digits_20_30kB_recipe,
+    },
+    // endregion int: sweep fixtures
+    // region int: separator sweep fixtures
+    num_digits_sep_4_30kB: {
+        path: "pkgs/lib/benches/res/int/num_digits_sep/4_30kB.dj",
+        recipe: num_digits_sep_4_30kB_recipe,
+    },
+    num_digits_sep_9_30kB: {
+        path: "pkgs/lib/benches/res/int/num_digits_sep/9_30kB.dj",
+        recipe: num_digits_sep_9_30kB_recipe,
+    },
+    num_digits_sep_10_30kB: {
+        path: "pkgs/lib/benches/res/int/num_digits_sep/10_30kB.dj",
+        recipe: num_digits_sep_10_30kB_recipe,
+    },
+    num_digits_sep_18_30kB: {
+        path: "pkgs/lib/benches/res/int/num_digits_sep/18_30kB.dj",
+        recipe: num_digits_sep_18_30kB_recipe,
+    },
+    num_digits_sep_19_30kB: {
+        path: "pkgs/lib/benches/res/int/num_digits_sep/19_30kB.dj",
+        recipe: num_digits_sep_19_30kB_recipe,
+    },
+    num_digits_sep_20_30kB: {
+        path: "pkgs/lib/benches/res/int/num_digits_sep/20_30kB.dj",
+        recipe: num_digits_sep_20_30kB_recipe,
+    },
+    // endregion int: separator sweep fixtures
     // region struct
     struct_short_keys_1k: {
         path: "pkgs/lib/benches/res/struct/short_keys_1k.dj",

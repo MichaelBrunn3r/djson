@@ -9,4 +9,9 @@ build-vscode-ext:
     cd pkgs/vscode-ext && deno task build && vsce package --no-dependencies
 
 init *args:
-    deno run --allow-read --allow-write --allow-net scripts/init.ts {{args}}
+    deno run --allow-read --allow-write --allow-net scripts/init.ts {{ args }}
+
+# just plot uint_num_digits sint_num_digits
+# just plot --y MB/s --groups "1,2;3,4" uint_sep sint_sep uint_num_digits sint_num_digits
+plot *args:
+    uv run scripts/plot_benches/main.py "$@"

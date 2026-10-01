@@ -10,7 +10,6 @@ pub struct Deserializer<'de> {
 }
 
 impl<'de> Deserializer<'de> {
-    /// Creates a deserializer for `src`.
     #[must_use]
     pub fn new(src: &'de [u8]) -> Self {
         Self {
@@ -27,6 +26,20 @@ macro_rules! impl_deserialize_uint {
                 V: serde::de::Visitor<'de>,
             {
                 let value: $ty = self.parser.parse_uint()?;
+                visitor.$visit(value)
+            }
+        )*
+    };
+}
+
+macro_rules! impl_deserialize_sint {
+    ($($method:ident => $ty:ty, $visit:ident;)*) => {
+        $(
+            fn $method<V>(self, visitor: V) -> Result<V::Value, Self::Error>
+            where
+                V: serde::de::Visitor<'de>,
+            {
+                let value: $ty = self.parser.parse_sint()?;
                 visitor.$visit(value)
             }
         )*
@@ -66,6 +79,13 @@ impl<'de> serde::Deserializer<'de> for &mut Deserializer<'de> {
         deserialize_u16 => u16, visit_u16;
         deserialize_u32 => u32, visit_u32;
         deserialize_u64 => u64, visit_u64;
+    }
+
+    impl_deserialize_sint! {
+        deserialize_i8 => i8, visit_i8;
+        deserialize_i16 => i16, visit_i16;
+        deserialize_i32 => i32, visit_i32;
+        deserialize_i64 => i64, visit_i64;
     }
 
     fn deserialize_str<V>(self, visitor: V) -> Result<V::Value, Self::Error>
@@ -129,7 +149,7 @@ impl<'de> serde::Deserializer<'de> for &mut Deserializer<'de> {
     }
 
     serde::forward_to_deserialize_any! {
-        i8 i16 i32 i64 f32 f64
+        f32 f64
         char bytes byte_buf unit unit_struct
         map newtype_struct enum identifier ignored_any
     }

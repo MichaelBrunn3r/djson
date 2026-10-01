@@ -10,6 +10,7 @@ const BYTE_SPACE = 0x20; // " "
 const BYTE_OPEN_PAREN = 0x28; // "("
 const BYTE_CLOSE_PAREN = 0x29; // ")"
 const BYTE_COMMA = 0x2c; // ","
+const BYTE_MINUS = 0x2d; // "-"
 const BYTE_OPEN_BRACKET = 0x5b; // "["
 const BYTE_CLOSE_BRACKET = 0x5d; // "]"
 const BYTE_OPEN_BRACE = 0x7b; // "{"
@@ -73,13 +74,58 @@ export function delimitedWriter(
   };
 }
 
+const DEFAULT_GROUP_SIZE = 3;
+
+/** Writes `text` in groups of `grouping.size` joined by `grouping.separator`, starting from the right. */
+function writeGroupedRhs(
+  writer: Writer,
+  text: string,
+  { separator, size = DEFAULT_GROUP_SIZE }: Grouping,
+  prefix?: number,
+): void {
+  if (prefix !== undefined) writer.writeByte(prefix);
+  const firstGroupLength = text.length % size || size;
+  writer.writeAscii(text.slice(0, firstGroupLength));
+  for (let i = firstGroupLength; i < text.length; i += size) {
+    writer.writeByte(separator);
+    writer.writeAscii(text.slice(i, i + size));
+  }
+}
+
+/** How a value's text is split into groups. */
+export interface Grouping {
+  /** Byte written between groups. */
+  readonly separator: number;
+  /** Characters per group. Defaults to 3. */
+  readonly size?: number;
+  /** Chance that the text is grouped at all. Defaults to 1. */
+  readonly chance?: number;
+}
+
+function validateGrouping(grouping: Grouping): void {
+  const size = grouping.size ?? DEFAULT_GROUP_SIZE;
+  assert(
+    Number.isInteger(size) && size > 0,
+    `group size must be a positive integer, got: ${size}`,
+  );
+
+  const chance = grouping.chance ?? 1;
+  assert(
+    chance >= 0 && chance <= 1,
+    `group chance must be in [0, 1], got: ${chance}`,
+  );
+}
+
+function shouldGroup(rng: Random, { chance = 1 }: Grouping): boolean {
+  return chance >= 1 || rng.nextFloat() < chance;
+}
+
 export function intWriter(
   bounds: Range,
-  {
-    separators = [],
-    separatorChance = 0.5,
-  }: { separators?: readonly number[]; separatorChance?: number } = {},
+  grouping?: Grouping,
 ): ValueWriter {
+  if (grouping !== undefined) validateGrouping(grouping);
+
   return {
     write(
       rng: Random,
@@ -90,31 +136,40 @@ export function intWriter(
       const value = rng.int(bounds);
       const wrap = requireDelimited === true && value < 0;
       if (wrap) writer.writeByte(BYTE_OPEN_PAREN);
-      if (
-        separators.length === 0 ||
-        rng.nextFloat() >= separatorChance
-      ) {
-        writer.writeInt(value);
+      if (grouping !== undefined && shouldGroup(rng, grouping)) {
+        writeGroupedRhs(
+          writer,
+          Math.abs(value).toString(),
+          grouping,
+          value < 0 ? BYTE_MINUS : undefined,
+        );
       } else {
-        const digits = Math.abs(value).toString();
-        const separator = rng.pick(separators);
-        if (value < 0) writer.writeByte(0x2d);
-        const firstGroupLength = digits.length % 3 || 3;
-        writer.writeAscii(digits.slice(0, firstGroupLength));
-        for (let i = firstGroupLength; i < digits.length; i += 3) {
-          writer.writeByte(separator);
-          writer.writeAscii(digits.slice(i, i + 3));
-        }
+        writer.writeInt(value);
       }
       if (wrap) writer.writeByte(BYTE_CLOSE_PAREN);
     },
   };
 }
 
-export function bigIntWriter(bounds: BigRange): ValueWriter {
+export function bigIntWriter(
+  bounds: BigRange,
+  grouping?: Grouping,
+): ValueWriter {
+  if (grouping !== undefined) validateGrouping(grouping);
+
   return {
     write(rng: Random, writer: Writer, _depthBudget: number): void {
-      writer.writeBigInt(rng.intBig(bounds));
+      const value = rng.intBig(bounds);
+      if (grouping === undefined || !shouldGroup(rng, grouping)) {
+        writer.writeBigInt(value);
+        return;
+      }
+      writeGroupedRhs(
+        writer,
+        (value < 0n ? -value : value).toString(),
+        grouping,
+        value < 0n ? BYTE_MINUS : undefined,
+      );
     },
   };
 }

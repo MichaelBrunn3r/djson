@@ -320,12 +320,11 @@ fn ends_raw_chunk(byte: u8) -> bool {
 #[cfg(test)]
 mod tests {
     use crate::{
-        from_bytes,
+        Deserializer, from_bytes,
         parser::{
             Parser,
             error::{ParserErrorKind, ParserResult},
         },
-        serde_de::Deserializer,
     };
 
     #[test]

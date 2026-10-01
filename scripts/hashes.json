@@ -1,5 +1,21 @@
 {
   "bench-data": {
+    "pkgs/lib/benches/res/int/mixed_5k.dj": "2ef16859abe85bfa4d03c4aa76165f76d349b730d9b3eb817dea24694925f626",
+    "pkgs/lib/benches/res/int/num_digits_sep/10_30kB.dj": "0c14741f90714ee0d5e0e1ac03b5815585052a3f66c961b46ea71320c1765760",
+    "pkgs/lib/benches/res/int/num_digits_sep/18_30kB.dj": "47cc96c046d0a3fc224821c020f3644a942bd6a60072cf6d621e6691c89ddf25",
+    "pkgs/lib/benches/res/int/num_digits_sep/19_30kB.dj": "a71cdee0d0eabe8f3dd8ab43d3dd824fc7cd1dd73b225cb2d9ee5b4249060dd9",
+    "pkgs/lib/benches/res/int/num_digits_sep/20_30kB.dj": "45e3bb09fc64b1f9034f88935e537e0ccb5cfff749b7ec9275af14181f48859b",
+    "pkgs/lib/benches/res/int/num_digits_sep/4_30kB.dj": "e84b8ad7fb3c28d37189b48019ad5cd42f76e0dfc38fff65ae0c78f9d7ecf8d9",
+    "pkgs/lib/benches/res/int/num_digits_sep/9_30kB.dj": "26838e16062901295139406041fcdd44e98aea9f61e9983d4599a06012ffb869",
+    "pkgs/lib/benches/res/int/num_digits/1_30kB.dj": "624274150a81c7fcfafce16f651d80c5c4cff196f0fda2281a447580afb0cb42",
+    "pkgs/lib/benches/res/int/num_digits/10_30kB.dj": "33a73dff6a6c2eb78a3c7c8365e5cfbf6ac896422be971ef31b397ea7cc2eb1b",
+    "pkgs/lib/benches/res/int/num_digits/18_30kB.dj": "6d08ba7c8592b6843cab5ca63d5c92f60c32b59fe8a1cd3040c29e89ccbdcf26",
+    "pkgs/lib/benches/res/int/num_digits/19_30kB.dj": "7d1a6c325f10541ed7188dcfe18d4ba59666131e039baf95b7cfff43f211becc",
+    "pkgs/lib/benches/res/int/num_digits/20_30kB.dj": "7889e79840fb21292b0c02363e6033106df22ce4159f217dacc042c3caf3c17f",
+    "pkgs/lib/benches/res/int/num_digits/3_30kB.dj": "75b71d6783c24011593b07a2d3dba6ffe03d596626f2cca5c49a58bd2e02ae25",
+    "pkgs/lib/benches/res/int/num_digits/4_30kB.dj": "6c8fd008c0769b3c32520a1d76cbb9b1286208a018682595ffdc61b63a7f2205",
+    "pkgs/lib/benches/res/int/num_digits/7_30kB.dj": "892e6101d164a89172340b9659c7b698135d85b7b831c84036c4e272375a2284",
+    "pkgs/lib/benches/res/int/num_digits/9_30kB.dj": "d3d5107f9b3f1be675e38806f8d463ebb88767be7d2648d2c9416191f97396a2",
     "pkgs/lib/benches/res/str/escaped_5k.dj": "468c187ddc3c68a894657b495acf4fbd7316e7a16393ea36933841b0e02385b7",
     "pkgs/lib/benches/res/str/mixed_5k.dj": "47d4dc782f3de190dd43e49b5fc2f251cafcc4e067c3fbbbbe5a9aef90e5760b",
     "pkgs/lib/benches/res/str/short_5k.dj": "05f243fc13aca345a7be6f2dbcbd62c0f2f71e96b092a30c8fa15f439635981c",
@@ -15,8 +31,6 @@
     "pkgs/lib/benches/res/struct/num_fields/8_100kB.dj": "6811e30140dc1b3a6c03c20268df0d498f8453736d0539cb02e9b4faf4c57df6",
     "pkgs/lib/benches/res/struct/partial_1k.dj": "c0e3feb0c759b2c94e27289608080773164d2629e12314a5dabee42888b2fedc",
     "pkgs/lib/benches/res/struct/short_keys_1k.dj": "cbf1084eb82ea68320521b77c7847d377406e8b4d6d34a40f7e6f787908bdf83",
-    "pkgs/lib/benches/res/u64/mixed_5k.dj": "c6b09d11fd747f15e6001f26aab0a34aa67f7395dc7bacfd4341444adbbdb4a2",
-    "pkgs/lib/benches/res/u64/short_5k.dj": "6fe1fdb04b31f01a8b5f7be89a6eb30b5d498aa3b6535294725042d88b415e5e",
     "pkgs/lib/benches/res/utf16_escapes_1k.txt": "c9769c482157ebf9ed2f2b2f8c27416a5fa1f68334dae550c7cade2c8e7d916a"
   },
   "dl": {

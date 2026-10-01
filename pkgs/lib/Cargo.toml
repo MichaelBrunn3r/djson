@@ -20,6 +20,10 @@ name = "parse_struct_sweep"
 harness = false
 
 [[bench]]
+name = "parse_int_sweep"
+harness = false
+
+[[bench]]
 name = "cmp_parse_uint"
 harness = false
 

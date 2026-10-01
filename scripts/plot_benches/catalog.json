@@ -1,0 +1,52 @@
+{
+    "uint_num_digits": {
+        "x_unit": "digits",
+        "xs": {
+            "1": "parse_int_sweep/uint/int_num_digits_1_30kB",
+            "3": "parse_int_sweep/uint/int_num_digits_3_30kB",
+            "4": "parse_int_sweep/uint/int_num_digits_4_30kB",
+            "7": "parse_int_sweep/uint/int_num_digits_7_30kB",
+            "9": "parse_int_sweep/uint/int_num_digits_9_30kB",
+            "10": "parse_int_sweep/uint/int_num_digits_10_30kB",
+            "18": "parse_int_sweep/uint/int_num_digits_18_30kB",
+            "19": "parse_int_sweep/uint/int_num_digits_19_30kB",
+            "20": "parse_int_sweep/uint/int_num_digits_20_30kB"
+        }
+    },
+    "sint_num_digits": {
+        "x_unit": "digits",
+        "xs": {
+            "1": "parse_int_sweep/sint/int_num_digits_1_30kB",
+            "3": "parse_int_sweep/sint/int_num_digits_3_30kB",
+            "4": "parse_int_sweep/sint/int_num_digits_4_30kB",
+            "7": "parse_int_sweep/sint/int_num_digits_7_30kB",
+            "9": "parse_int_sweep/sint/int_num_digits_9_30kB",
+            "10": "parse_int_sweep/sint/int_num_digits_10_30kB",
+            "18": "parse_int_sweep/sint/int_num_digits_18_30kB"
+        }
+    },
+    "uint_sep": {
+        "x_unit": "digits",
+        "xs": {
+            "1": "parse_int_sweep/uint_sep/int_num_digits_1_30kB",
+            "3": "parse_int_sweep/uint_sep/int_num_digits_3_30kB",
+            "4": "parse_int_sweep/uint_sep/int_num_digits_sep_4_30kB",
+            "9": "parse_int_sweep/uint_sep/int_num_digits_sep_9_30kB",
+            "10": "parse_int_sweep/uint_sep/int_num_digits_sep_10_30kB",
+            "18": "parse_int_sweep/uint_sep/int_num_digits_sep_18_30kB",
+            "19": "parse_int_sweep/uint_sep/int_num_digits_sep_19_30kB",
+            "20": "parse_int_sweep/uint_sep/int_num_digits_sep_20_30kB"
+        }
+    },
+    "sint_sep": {
+        "x_unit": "digits",
+        "xs": {
+            "1": "parse_int_sweep/sint_sep/int_num_digits_1_30kB",
+            "3": "parse_int_sweep/sint_sep/int_num_digits_3_30kB",
+            "4": "parse_int_sweep/sint_sep/int_num_digits_sep_4_30kB",
+            "9": "parse_int_sweep/sint_sep/int_num_digits_sep_9_30kB",
+            "10": "parse_int_sweep/sint_sep/int_num_digits_sep_10_30kB",
+            "18": "parse_int_sweep/sint_sep/int_num_digits_sep_18_30kB"
+        }
+    }
+}

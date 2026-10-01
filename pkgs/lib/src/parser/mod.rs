@@ -3,6 +3,7 @@ use self::error::{ParserError, ParserResult};
 pub(crate) mod error;
 mod parse_list;
 mod parse_map;
+mod parse_sint;
 mod parse_str;
 mod parse_uint;
 mod parse_utf16_escape;
